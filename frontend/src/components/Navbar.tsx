@@ -31,9 +31,11 @@ export function Navbar() {
 
           {/* CTA Button */}
           <div className="hidden md:block">
-            <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors">
-              Get Started
-            </button>
+            <a href="/login">
+              <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                Get Started
+              </button>
+            </a>
           </div>
 
           {/* Mobile Menu Button */}
