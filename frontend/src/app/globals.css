@@ -25,3 +25,41 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+/* Fix autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #F9FAFB inset !important;
+  -webkit-text-fill-color: #111827 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Ensure password dots are visible */
+input[type="password"] {
+  font-family: text-security-disc;
+  -webkit-text-security: disc;
+}
+
+/* Lighter placeholder text - very subtle */
+input::placeholder,
+textarea::placeholder {
+  color: #D1D5DB !important;
+  opacity: 0.4 !important;
+}
+
+input::-webkit-input-placeholder {
+  color: #D1D5DB !important;
+  opacity: 0.4 !important;
+}
+
+input::-moz-placeholder {
+  color: #D1D5DB !important;
+  opacity: 0.4 !important;
+}
+
+input:-ms-input-placeholder {
+  color: #D1D5DB !important;
+  opacity: 0.4 !important;
+}
