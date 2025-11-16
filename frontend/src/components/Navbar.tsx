@@ -57,7 +57,7 @@ export function Navbar() {
                 )}
                 <span className="text-sm font-medium text-gray-900">{session.user?.name}</span>
                 <Link href="/dashboard">
-                  <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                  <button className="text-white px-4 py-2 rounded-lg font-medium transition-all btn-3d btn-3d-primary">
                     Dashboard
                   </button>
                 </Link>
@@ -81,7 +81,7 @@ export function Navbar() {
               </div>
             ) : (
               <Link href="/login">
-                <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                <button className="text-white px-6 py-2 rounded-lg font-medium transition-all btn-3d btn-3d-primary">
                   Get Started
                 </button>
               </Link>

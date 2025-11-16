@@ -71,7 +71,7 @@ export default function Dashboard() {
               <button
                 onClick={handleSignOut}
                 disabled={isSigningOut}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center gap-2 btn-3d"
               >
                 {isSigningOut ? (
                   <>

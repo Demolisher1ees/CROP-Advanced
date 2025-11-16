@@ -56,16 +56,27 @@ export default function LoginPage() {
         <h1 className="text-xl font-semibold text-center text-gray-900 mb-1">Welcome to FarmIQ</h1>
         <p className="text-center text-sm text-gray-600 mb-6">Login to your account or create a new one</p>
 
-        <div className="flex bg-gray-100 rounded-full p-1 mb-6">
+        <div className="relative flex bg-gray-100 rounded-full p-1 mb-6 overflow-hidden">
+          {/* Sliding background */}
+          <div 
+            className={`absolute top-1 bottom-1 w-1/2 bg-white rounded-full shadow-sm transition-all duration-300 ease-in-out ${
+              isLogin ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          />
+          
           <button
             onClick={() => setIsLogin(true)}
-            className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-colors ${isLogin ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"}`}
+            className={`relative flex-1 py-2 px-4 rounded-full text-sm font-medium transition-colors duration-300 z-10 ${
+              isLogin ? "text-gray-900" : "text-gray-600 hover:text-gray-800"
+            }`}
           >
             Login
           </button>
           <button
             onClick={() => setIsLogin(false)}
-            className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-colors ${!isLogin ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"}`}
+            className={`relative flex-1 py-2 px-4 rounded-full text-sm font-medium transition-colors duration-300 z-10 ${
+              !isLogin ? "text-gray-900" : "text-gray-600 hover:text-gray-800"
+            }`}
           >
             Sign Up
           </button>
@@ -160,7 +171,7 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+            className="w-full text-white py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-primary"
           >
             {loading ? "Loading..." : (isLogin ? "Login" : "Sign Up")}
           </button>
@@ -179,7 +190,7 @@ export default function LoginPage() {
           type="button" 
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-secondary"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -191,9 +202,7 @@ export default function LoginPage() {
         </button>
       </div>
 
-      <button className="fixed bottom-8 right-8 w-12 h-12 bg-gray-800 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors shadow-lg">
-        <span className="text-xl">?</span>
-      </button>
+
     </div>
   )
 }
