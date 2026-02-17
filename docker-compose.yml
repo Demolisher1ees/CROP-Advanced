@@ -1,71 +1,64 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: crop_advisor_db
+  # ML Service for crop recommendations
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: crop-ml-service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ml-service:/app
+      - ./data:/app/data  # Mount your CSV dataset here
     environment:
-      POSTGRES_USER: cropuser
-      POSTGRES_PASSWORD: croppass
-      POSTGRES_DB: crop_advisor
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cropuser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - PYTHONUNBUFFERED=1
+    networks:
+      - crop-network
+    restart: unless-stopped
 
-  redis:
-    image: redis:7-alpine
-    container_name: crop_advisor_cache
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+  # Backend API (existing FastAPI)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: crop_advisor_backend
+    container_name: crop-backend
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://cropuser:croppass@postgres:5432/crop_advisor
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     volumes:
       - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/cropdb
+      - ML_SERVICE_URL=http://ml-service:8001
+    depends_on:
+      - ml-service
+    networks:
+      - crop-network
+    restart: unless-stopped
 
+  # Frontend (Next.js)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: crop_advisor_frontend
+    container_name: crop-frontend
     ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-    depends_on:
-      - backend
+      - "3001:3001"
     volumes:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_ML_SERVICE_URL=http://localhost:8001
+    depends_on:
+      - backend
+      - ml-service
+    networks:
+      - crop-network
+    restart: unless-stopped
 
-volumes:
-  postgres_data:
-  redis_data:
+networks:
+  crop-network:
+    driver: bridge

@@ -126,3 +126,111 @@ select.btn-3d:active {
   transform: translateY(0) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
+
+/* Bubble animation for select dropdown */
+@keyframes bubble-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02);
+  }
+}
+
+@keyframes bubble-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+  50% {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 8px rgba(22, 163, 74, 0.1);
+  }
+}
+
+select.btn-3d:focus {
+  animation: bubble-float 2s ease-in-out infinite, bubble-pulse 2s ease-in-out infinite;
+  outline: none;
+  border-color: #16a34a;
+}
+
+/* Bubble effect on dropdown options */
+select.btn-3d option {
+  padding: 8px 12px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+select.btn-3d option:hover {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+/* Bubble container with floating decorations */
+.bubble-container {
+  position: relative;
+}
+
+.bubble-container::before,
+.bubble-container::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.1) 0%, rgba(22, 163, 74, 0) 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bubble-container::before {
+  width: 40px;
+  height: 40px;
+  top: -10px;
+  right: -10px;
+  animation: bubble-float-1 3s ease-in-out infinite;
+}
+
+.bubble-container::after {
+  width: 30px;
+  height: 30px;
+  bottom: -8px;
+  left: -8px;
+  animation: bubble-float-2 4s ease-in-out infinite;
+}
+
+@keyframes bubble-float-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-5px, -8px) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes bubble-float-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(5px, 8px) scale(1.15);
+    opacity: 0.6;
+  }
+}
+
+/* Enhanced bubble effect on focus */
+.bubble-container:focus-within::before {
+  animation: bubble-float-1 2s ease-in-out infinite, bubble-glow 2s ease-in-out infinite;
+}
+
+.bubble-container:focus-within::after {
+  animation: bubble-float-2 2.5s ease-in-out infinite, bubble-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes bubble-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(22, 163, 74, 0.2);
+  }
+}

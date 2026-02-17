@@ -1,3 +1,4 @@
+# Frontend Dockerfile
 FROM node:18-alpine
 
 WORKDIR /app
@@ -12,7 +13,7 @@ RUN npm install
 COPY . .
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
-# Run the application
-CMD ["npm", "run", "dev"]
+# Start development server on port 3001
+CMD ["npm", "run", "dev", "--", "-p", "3001"]
