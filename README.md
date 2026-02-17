@@ -10,6 +10,7 @@ An AI-powered crop recommendation system that analyzes real-time environmental d
 
 ## 🎯 Features
 
+- **🔐 Secure Authentication** - Email/password signup and Google OAuth login
 - **🌍 Location-Based Analysis** - GPS detection with weather and soil data
 - **🤖 AI-Powered Recommendations** - Machine learning crop suitability analysis
 - **📊 26 Indian Crops** - Comprehensive database with growing requirements
@@ -117,16 +118,56 @@ npm run dev -- -p 3001
 Copy `.env.example` to `.env.local` in the frontend directory and configure:
 
 ```env
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# NextAuth Configuration
+AUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3001
+
+# Google OAuth (for login)
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+
 # Google Maps (for location names)
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key
 
 # OpenWeather (for real weather data)
 NEXT_PUBLIC_OPENWEATHER_API_KEY=your_api_key
-
-# Google OAuth (for login)
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
 ```
+
+## 🔐 Authentication
+
+The system includes a complete authentication system:
+
+### Features
+- **Email/Password Signup & Login** - Secure user registration with bcrypt password hashing
+- **Google OAuth** - One-click sign-in with Google
+- **JWT Tokens** - Stateless authentication with JSON Web Tokens
+- **Session Management** - Secure session handling with NextAuth.js
+
+### Setup Guide
+See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md) for detailed setup instructions.
+
+### Quick Test
+```bash
+# Start backend
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+# Test authentication (in another terminal)
+python test_auth.py
+```
+
+### API Endpoints
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/login` - Authenticate and get JWT token
+
+### Database
+- Uses SQLite by default (no setup required)
+- Easily upgradeable to PostgreSQL for production
+- User table with email, hashed password, and profile info
 
 ## 📈 Analysis Algorithm
 

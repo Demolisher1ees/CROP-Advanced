@@ -28,9 +28,13 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - backend-db:/app/db  # Persist SQLite database
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/cropdb
+      - DATABASE_URL=sqlite:///./db/crop_advisor.db
       - ML_SERVICE_URL=http://ml-service:8001
+      - JWT_SECRET_KEY=docker-jwt-secret-change-in-production
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
     depends_on:
       - ml-service
     networks:
@@ -52,6 +56,11 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
       - NEXT_PUBLIC_ML_SERVICE_URL=http://localhost:8001
+      - API_URL=http://backend:8000
+      - AUTH_SECRET=default-auth-secret-change-in-production
+      - NEXTAUTH_URL=http://localhost:3001
+      - GOOGLE_CLIENT_ID=206206663180-se90qqmab5bd6gjrdg44dqoqrja3d43d.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
     depends_on:
       - backend
       - ml-service
@@ -62,3 +71,6 @@ services:
 networks:
   crop-network:
     driver: bridge
+
+volumes:
+  backend-db:  # Named volume for SQLite database persistence

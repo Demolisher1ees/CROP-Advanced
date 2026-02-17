@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [loading, setLoading] = useState(false)
@@ -34,49 +35,96 @@ export default function LoginPage() {
     }
   }
 
+  const handleSignup = async () => {
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Signup failed")
+      }
+
+      // Auto-login after successful signup
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false
+      })
+
+      if (result?.error) {
+        setError("Account created but login failed. Please try logging in.")
+      } else {
+        router.push("/dashboard")
+      }
+    } catch (err: any) {
+      setError(err.message || "Signup failed. Please try again.")
+    }
+  }
+
+  const handleLogin = async () => {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false
+    })
+
+    console.log("Login result:", result)
+
+    if (result?.error) {
+      console.error("Login error:", result.error)
+      setError(`Login failed: ${result.error}`)
+    } else {
+      router.push("/dashboard")
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
     
-    // Demo authentication for email/password
-    // In production, this would call your backend API
     try {
       if (isLogin) {
-        if (email && password) {
-          console.log("Demo login successful:", { email })
-          localStorage.setItem('demo_user', JSON.stringify({ 
-            email, 
-            name: email.split('@')[0],
-            loginTime: new Date().toISOString()
-          }))
-          router.push("/dashboard")
-        } else {
+        if (!email || !password) {
           setError("Please enter email and password")
+          return
         }
+        await handleLogin()
       } else {
-        if (firstName && lastName && email && password) {
-          console.log("Demo signup successful:", { firstName, lastName, email })
-          localStorage.setItem('demo_user', JSON.stringify({ 
-            email, 
-            name: `${firstName} ${lastName}`,
-            loginTime: new Date().toISOString()
-          }))
-          router.push("/dashboard")
-        } else {
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
           setError("Please fill in all fields")
+          return
         }
+        await handleSignup()
       }
     } catch (err) {
       setError("An error occurred. Please try again.")
-      console.error("Login error:", err)
+      console.error("Auth error:", err)
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleSkipLogin = () => {
-    router.push("/")
   }
 
   // Show loading state while checking session
@@ -100,7 +148,9 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-xl font-semibold text-center text-gray-900 mb-1">Welcome to FarmIQ</h1>
-        <p className="text-center text-sm text-gray-600 mb-6">Demo Mode - Login with any credentials</p>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          {isLogin ? "Sign in to your account" : "Create your account"}
+        </p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -210,6 +260,26 @@ export default function LoginPage() {
             />
           </div>
 
+          {!isLogin && (
+            <div>
+              <label className="block text-xs font-medium text-gray-900 mb-1">Confirm Password</label>
+              <input 
+                type="password" 
+                name="confirmPassword"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••" 
+                className="w-full px-3 py-2 text-sm text-gray-900 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 placeholder:text-gray-300 placeholder:opacity-35" 
+                style={{
+                  WebkitTextFillColor: '#111827',
+                  WebkitBoxShadow: '0 0 0px 1000px #F9FAFB inset',
+                }}
+                required 
+              />
+            </div>
+          )}
+
           {isLogin && (
             <div className="flex items-center justify-between">
               <label className="flex items-center">
@@ -225,7 +295,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full text-white py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-primary"
           >
-            {loading ? "Loading..." : (isLogin ? "Login (Demo)" : "Sign Up (Demo)")}
+            {loading ? "Loading..." : (isLogin ? "Login" : "Sign Up")}
           </button>
         </form>
 
@@ -234,20 +304,9 @@ export default function LoginPage() {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="px-2 bg-white text-gray-500">Or</span>
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
           </div>
         </div>
-
-        <button 
-          type="button" 
-          onClick={handleSkipLogin}
-          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all btn-3d btn-3d-secondary mb-3"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-          Skip Login & Go to Homepage
-        </button>
 
         <button 
           type="button" 
@@ -261,15 +320,15 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          {loading ? "Signing in..." : "Continue with Google"}
+          {loading ? "Signing in..." : "Google"}
         </button>
 
-        <p className="mt-4 text-center text-xs text-gray-500">
-          Email/Password: Demo Mode | Google: Real OAuth
-        </p>
+        {!isLogin && (
+          <p className="mt-4 text-center text-xs text-gray-500">
+            By signing up, you agree to our Terms of Service and Privacy Policy
+          </p>
+        )}
       </div>
-
-
     </div>
   )
 }

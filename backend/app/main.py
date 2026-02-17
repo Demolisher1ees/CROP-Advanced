@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import weather, soil, predict
+from app.routes import weather, soil, predict, auth
+from app.database.db import engine, Base
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Smart Crop Advisor API",
@@ -12,13 +16,14 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])
 app.include_router(soil.router, prefix="/api/soil", tags=["Soil"])
 app.include_router(predict.router, prefix="/api/predict", tags=["Predictions"])
