@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useState, useEffect } from "react"
+import { signIn, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
@@ -12,11 +12,26 @@ export default function LoginPage() {
   const [lastName, setLastName] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const { data: session, status } = useSession()
   const router = useRouter()
 
-  const handleGoogleSignIn = () => {
-    setError("Google Sign-In requires OAuth configuration. Please use demo login or skip to homepage.")
-    console.log("Google OAuth not configured. Redirecting to setup instructions...")
+  // Redirect if already logged in
+  useEffect(() => {
+    if (session) {
+      router.push("/dashboard")
+    }
+  }, [session, router])
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true)
+      setError("")
+      await signIn("google", { callbackUrl: "/dashboard" })
+    } catch (err) {
+      console.error("Google sign-in error:", err)
+      setError("Failed to sign in with Google. Please try again.")
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,13 +39,12 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
     
-    // Demo authentication - in production, this would call your backend API
+    // Demo authentication for email/password
+    // In production, this would call your backend API
     try {
       if (isLogin) {
-        // Demo login - accept any email/password for testing
         if (email && password) {
           console.log("Demo login successful:", { email })
-          // Store demo session
           localStorage.setItem('demo_user', JSON.stringify({ 
             email, 
             name: email.split('@')[0],
@@ -41,10 +55,8 @@ export default function LoginPage() {
           setError("Please enter email and password")
         }
       } else {
-        // Demo signup
         if (firstName && lastName && email && password) {
           console.log("Demo signup successful:", { firstName, lastName, email })
-          // Store demo session
           localStorage.setItem('demo_user', JSON.stringify({ 
             email, 
             name: `${firstName} ${lastName}`,
@@ -64,8 +76,16 @@ export default function LoginPage() {
   }
 
   const handleSkipLogin = () => {
-    // Allow users to skip login and go directly to homepage
     router.push("/")
+  }
+
+  // Show loading state while checking session
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -233,7 +253,7 @@ export default function LoginPage() {
           type="button" 
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-secondary opacity-50 cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-secondary"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -241,11 +261,11 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Google Sign-In (Requires Setup)
+          {loading ? "Signing in..." : "Continue with Google"}
         </button>
 
         <p className="mt-4 text-center text-xs text-gray-500">
-          Demo Mode: Use any email/password to test the system
+          Email/Password: Demo Mode | Google: Real OAuth
         </p>
       </div>
 
