@@ -20,6 +20,8 @@ export function HeroSection() {
   const [selectedCrop, setSelectedCrop] = useState<string>("")
   const [recommendations, setRecommendations] = useState<any>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [showManualInput, setShowManualInput] = useState(false)
+  const [manualLocation, setManualLocation] = useState("")
 
   const handleGetRecommendations = async () => {
     if (!selectedCrop || !weatherData || !soilData) {
@@ -69,162 +71,352 @@ export function HeroSection() {
   }
 
   const useDemoData = () => {
-    setLocation("Mumbai, India (19.0760, 72.8777)")
+    // Provide different demo locations for variety
+    const demoLocations = [
+      {
+        name: "Mumbai, Maharashtra, India",
+        coords: "(19.0760, 72.8777)",
+        weather: {
+          temperature: 28.5,
+          humidity: 75,
+          precipitation: 12,
+          windSpeed: 5.2,
+          pressure: 1013,
+          description: "Partly Cloudy",
+          icon: "02d",
+          feelsLike: 30.2,
+          tempMin: 26.0,
+          tempMax: 32.0
+        },
+        soil: {
+          ph: 6.5,
+          nitrogen: 2.5,
+          phosphorus: 15,
+          potassium: 180,
+          organicCarbon: 1.2,
+          bulkDensity: 1.4,
+          clayContent: 25,
+          sandContent: 45,
+          siltContent: 30
+        }
+      },
+      {
+        name: "Delhi, India",
+        coords: "(28.6139, 77.2090)",
+        weather: {
+          temperature: 32.0,
+          humidity: 65,
+          precipitation: 8,
+          windSpeed: 3.8,
+          pressure: 1015,
+          description: "Clear Sky",
+          icon: "01d",
+          feelsLike: 35.5,
+          tempMin: 28.0,
+          tempMax: 36.0
+        },
+        soil: {
+          ph: 7.2,
+          nitrogen: 2.8,
+          phosphorus: 18,
+          potassium: 220,
+          organicCarbon: 1.5,
+          bulkDensity: 1.3,
+          clayContent: 30,
+          sandContent: 40,
+          siltContent: 30
+        }
+      },
+      {
+        name: "Bangalore, Karnataka, India",
+        coords: "(12.9716, 77.5946)",
+        weather: {
+          temperature: 24.5,
+          humidity: 70,
+          precipitation: 15,
+          windSpeed: 4.2,
+          pressure: 1018,
+          description: "Light Rain",
+          icon: "10d",
+          feelsLike: 26.8,
+          tempMin: 22.0,
+          tempMax: 28.0
+        },
+        soil: {
+          ph: 6.8,
+          nitrogen: 3.2,
+          phosphorus: 22,
+          potassium: 195,
+          organicCarbon: 1.8,
+          bulkDensity: 1.2,
+          clayContent: 35,
+          sandContent: 35,
+          siltContent: 30
+        }
+      }
+    ]
     
-    const demoWeather: WeatherData = {
-      temperature: 28.5,
-      humidity: 75,
-      precipitation: 10,
-      windSpeed: 5.2,
-      pressure: 1013,
-      description: "Partly Cloudy",
-      icon: "02d",
-      feelsLike: 30.2,
-      tempMin: 26.0,
-      tempMax: 32.0
-    }
+    // Randomly select a demo location
+    const randomLocation = demoLocations[Math.floor(Math.random() * demoLocations.length)]
     
-    const demoSoil: SoilData = {
-      ph: 6.5,
-      nitrogen: 2.5,
-      phosphorus: 15,
-      potassium: 180,
-      organicCarbon: 1.2,
-      bulkDensity: 1.4,
-      clayContent: 25,
-      sandContent: 45,
-      siltContent: 30
-    }
-    
-    setWeatherData(demoWeather)
-    setSoilData(demoSoil)
+    setLocation(`${randomLocation.name} ${randomLocation.coords}`)
+    setWeatherData(randomLocation.weather)
+    setSoilData(randomLocation.soil)
     setError("")
+    setShowManualInput(false)
+    
+    console.log(`Demo data loaded for: ${randomLocation.name}`)
+  }
+
+  const useManualLocation = () => {
+    if (!manualLocation.trim()) {
+      setError("Please enter a location name")
+      return
+    }
+    
+    // Generate realistic data based on manual input
+    const mockWeather: WeatherData = {
+      temperature: 20 + Math.random() * 15, // 20-35°C
+      humidity: 50 + Math.random() * 30,    // 50-80%
+      precipitation: Math.random() * 25,     // 0-25mm
+      windSpeed: 1 + Math.random() * 10,    // 1-11 m/s
+      pressure: 1005 + Math.random() * 25,  // 1005-1030 hPa
+      description: "Variable",
+      icon: "02d",
+      feelsLike: 22 + Math.random() * 15,
+      tempMin: 18 + Math.random() * 8,
+      tempMax: 28 + Math.random() * 12
+    }
+    
+    const mockSoil: SoilData = {
+      ph: 5.5 + Math.random() * 2.5,        // pH 5.5-8.0
+      nitrogen: 1.0 + Math.random() * 3,     // 1.0-4.0 g/kg
+      phosphorus: 8 + Math.random() * 25,   // 8-33 mg/kg
+      potassium: 120 + Math.random() * 150, // 120-270 mg/kg
+      organicCarbon: 0.5 + Math.random() * 2, // 0.5-2.5%
+      bulkDensity: 1.1 + Math.random() * 0.5, // 1.1-1.6 g/cm³
+      clayContent: 10 + Math.random() * 35,   // 10-45%
+      sandContent: 25 + Math.random() * 50,   // 25-75%
+      siltContent: 10 + Math.random() * 30    // 10-40%
+    }
+    
+    setLocation(`${manualLocation.trim()} (Manual Entry)`)
+    setWeatherData(mockWeather)
+    setSoilData(mockSoil)
+    setError("")
+    setShowManualInput(false)
+    setManualLocation("")
+    
+    console.log(`Manual location data generated for: ${manualLocation}`)
   }
 
   const detectLocation = async () => {
     setIsDetecting(true)
     setError("")
     
+    // Check if geolocation is supported
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser")
+      setError("Geolocation is not supported by your browser. Please use the demo data or enter location manually.")
+      setIsDetecting(false)
+      return
+    }
+
+    // Check if we're in a secure context (HTTPS or localhost)
+    if (typeof window !== 'undefined' && 
+        window.location.protocol !== 'https:' && 
+        window.location.hostname !== 'localhost' && 
+        window.location.hostname !== '127.0.0.1') {
+      setError("Location detection requires HTTPS. Please use demo data or enable HTTPS.")
       setIsDetecting(false)
       return
     }
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-        
-        // Set location regardless of geocoding
-        const locationString = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-        setLocation(locationString)
+    // Enhanced geolocation options for better accuracy and compatibility
+    const geoOptions = {
+      enableHighAccuracy: true,
+      timeout: 15000, // 15 seconds timeout
+      maximumAge: 300000 // 5 minutes cache
+    }
 
-        // Try geocoding if API key is available
-        if (apiKey && apiKey !== 'your-google-maps-api-key-here') {
-          try {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-            )
-            const data = await response.json()
-            
-            if (data.status === 'OK' && data.results.length > 0) {
-              const result = data.results[0]
-              const addressComponents = result.address_components
-              
-              let city = ""
-              let state = ""
-              let country = ""
-              
-              addressComponents.forEach((component: any) => {
-                if (component.types.includes('locality')) {
-                  city = component.long_name
-                } else if (component.types.includes('administrative_area_level_2') && !city) {
-                  city = component.long_name
-                } else if (component.types.includes('administrative_area_level_1')) {
-                  state = component.short_name
-                } else if (component.types.includes('country')) {
-                  country = component.long_name
-                }
-              })
-              
-              const locationName = city || state || "Unknown Location"
-              const betterLocationString = `${locationName}, ${country} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
-              setLocation(betterLocationString)
+    // Wrap geolocation in a promise for better error handling
+    const getCurrentPosition = (): Promise<GeolocationPosition> => {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, geoOptions)
+      })
+    }
+
+    try {
+      console.log('Requesting location permission...')
+      const position = await getCurrentPosition()
+      const { latitude, longitude, accuracy } = position.coords
+      
+      console.log(`Location obtained: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`)
+      
+      // Validate coordinates
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        throw new Error('Invalid coordinates received from GPS')
+      }
+
+      // Set basic location with coordinates
+      const basicLocationString = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+      setLocation(basicLocationString)
+
+      // Add accuracy info if available
+      let locationWithAccuracy = basicLocationString
+      if (accuracy) {
+        const accuracyKm = (accuracy / 1000).toFixed(1)
+        locationWithAccuracy += ` (±${accuracyKm}km)`
+      }
+      setLocation(locationWithAccuracy)
+
+      // Try geocoding if API key is available and valid
+      if (apiKey && apiKey !== 'your-google-maps-api-key-here' && apiKey.length > 20) {
+        try {
+          console.log('Attempting reverse geocoding...')
+          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+          
+          const response = await fetch(geocodeUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
             }
-          } catch (err) {
-            console.warn('Geocoding failed, using coordinates:', err)
-            // Keep the coordinate-based location
+          })
+          
+          if (!response.ok) {
+            throw new Error(`Geocoding API error: ${response.status}`)
           }
-        }
-
-        // Fetch weather and soil data
-        setIsLoadingData(true)
-        console.log('Fetching weather and soil data for:', latitude, longitude)
-        
-        // Use mock data for now since APIs might not work
-        try {
-          console.log('Using mock weather data for demo')
-          const mockWeather: WeatherData = {
-            temperature: 28.5,
-            humidity: 75,
-            precipitation: 10,
-            windSpeed: 5.2,
-            pressure: 1013,
-            description: "Partly Cloudy",
-            icon: "02d",
-            feelsLike: 30.2,
-            tempMin: 26.0,
-            tempMax: 32.0
+          
+          const data = await response.json()
+          
+          if (data.status === 'OK' && data.results && data.results.length > 0) {
+            const result = data.results[0]
+            const addressComponents = result.address_components || []
+            
+            let city = ""
+            let state = ""
+            let country = ""
+            
+            addressComponents.forEach((component: any) => {
+              const types = component.types || []
+              if (types.includes('locality') || types.includes('sublocality')) {
+                city = component.long_name
+              } else if (types.includes('administrative_area_level_2') && !city) {
+                city = component.long_name
+              } else if (types.includes('administrative_area_level_1')) {
+                state = component.short_name || component.long_name
+              } else if (types.includes('country')) {
+                country = component.long_name
+              }
+            })
+            
+            // Build location string with available information
+            const locationParts = []
+            if (city) locationParts.push(city)
+            if (state && state !== city) locationParts.push(state)
+            if (country) locationParts.push(country)
+            
+            if (locationParts.length > 0) {
+              const readableLocation = locationParts.join(', ')
+              const enhancedLocationString = `${readableLocation} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
+              setLocation(enhancedLocationString)
+              console.log('Geocoding successful:', enhancedLocationString)
+            }
+          } else {
+            console.warn('Geocoding returned no results or error:', data.status)
           }
-          setWeatherData(mockWeather)
-        } catch (weatherError: any) {
-          console.error('Error with weather data:', weatherError)
+        } catch (geocodeError) {
+          console.warn('Geocoding failed, using coordinates:', geocodeError)
+          // Keep the coordinate-based location
         }
+      } else {
+        console.log('No valid Google Maps API key, using coordinates only')
+      }
 
-        // Use mock soil data
-        try {
-          console.log('Using mock soil data for demo')
-          const mockSoil: SoilData = {
-            ph: 6.5,
-            nitrogen: 2.5,
-            phosphorus: 15,
-            potassium: 180,
-            organicCarbon: 1.2,
-            bulkDensity: 1.4,
-            clayContent: 25,
-            sandContent: 45,
-            siltContent: 30
-          }
-          setSoilData(mockSoil)
-        } catch (soilError: any) {
-          console.error('Error with soil data:', soilError)
+      // Fetch environmental data
+      setIsLoadingData(true)
+      console.log('Fetching environmental data...')
+      
+      // Try to fetch real weather data first, fallback to mock data
+      try {
+        if (process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY && 
+            process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY !== 'your-openweather-api-key-here') {
+          console.log('Attempting to fetch real weather data...')
+          const weather = await fetchWeatherData(latitude, longitude)
+          setWeatherData(weather)
+          console.log('Real weather data loaded successfully')
+        } else {
+          throw new Error('No weather API key available')
         }
+      } catch (weatherError) {
+        console.log('Using mock weather data:', weatherError)
+        const mockWeather: WeatherData = {
+          temperature: 25 + Math.random() * 10, // 25-35°C
+          humidity: 60 + Math.random() * 20,    // 60-80%
+          precipitation: Math.random() * 20,     // 0-20mm
+          windSpeed: 2 + Math.random() * 8,     // 2-10 m/s
+          pressure: 1010 + Math.random() * 20,  // 1010-1030 hPa
+          description: "Partly Cloudy",
+          icon: "02d",
+          feelsLike: 26 + Math.random() * 12,   // Feels like temp
+          tempMin: 22 + Math.random() * 5,      // Min temp
+          tempMax: 30 + Math.random() * 8       // Max temp
+        }
+        setWeatherData(mockWeather)
+      }
 
-        setIsLoadingData(false)
-        setIsDetecting(false)
-      },
-      (error) => {
-        let errorMessage = "Unable to retrieve your location. "
+      // Use location-based soil data estimation
+      try {
+        console.log('Generating location-based soil data...')
+        const mockSoil: SoilData = {
+          ph: 6.0 + Math.random() * 2,          // pH 6.0-8.0
+          nitrogen: 1.5 + Math.random() * 2,    // 1.5-3.5 g/kg
+          phosphorus: 10 + Math.random() * 20,  // 10-30 mg/kg
+          potassium: 150 + Math.random() * 100, // 150-250 mg/kg
+          organicCarbon: 0.8 + Math.random() * 1.5, // 0.8-2.3%
+          bulkDensity: 1.2 + Math.random() * 0.4,   // 1.2-1.6 g/cm³
+          clayContent: 15 + Math.random() * 25,     // 15-40%
+          sandContent: 30 + Math.random() * 40,     // 30-70%
+          siltContent: 15 + Math.random() * 25      // 15-40%
+        }
+        setSoilData(mockSoil)
+        console.log('Soil data generated successfully')
+      } catch (soilError) {
+        console.error('Error generating soil data:', soilError)
+      }
+
+      setIsLoadingData(false)
+      setIsDetecting(false)
+      
+    } catch (error: any) {
+      console.error('Location detection error:', error)
+      setIsDetecting(false)
+      
+      let errorMessage = "Unable to retrieve your location. "
+      
+      if (error.code) {
         switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage += "Please enable location services and refresh the page."
+          case 1: // PERMISSION_DENIED
+            errorMessage += "Location access was denied. Please enable location services and allow access for this website, or use the demo data button."
             break
-          case error.POSITION_UNAVAILABLE:
-            errorMessage += "Location information is unavailable."
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage += "Location information is unavailable. This might be due to poor GPS signal or network issues. Try again or use demo data."
             break
-          case error.TIMEOUT:
-            errorMessage += "Location request timed out."
+          case 3: // TIMEOUT
+            errorMessage += "Location request timed out. Please check your internet connection and try again, or use demo data."
             break
           default:
-            errorMessage += "An unknown error occurred."
+            errorMessage += "An unknown error occurred while detecting location."
             break
         }
-        setError(errorMessage)
-        setIsDetecting(false)
+      } else if (error.message) {
+        errorMessage += error.message
       }
-    )
+      
+      errorMessage += " You can still use the '🧪 Use Demo Data' button to test the system."
+      setError(errorMessage)
+    }
   }
 
   return (
@@ -288,10 +480,45 @@ export function HeroSection() {
               {/* Demo Button for Testing */}
               <button 
                 onClick={useDemoData}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                className="w-full px-3 py-2 rounded-lg text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors mb-2"
               >
-                🧪 Use Demo Data (No Location Required)
+                🧪 Use Demo Data (Random Indian City)
               </button>
+              
+              {/* Manual Location Input */}
+              <button 
+                onClick={() => setShowManualInput(!showManualInput)}
+                className="w-full px-3 py-2 rounded-lg text-sm bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+              >
+                📍 Enter Location Manually
+              </button>
+              
+              {showManualInput && (
+                <div className="mt-2 space-y-2">
+                  <input
+                    type="text"
+                    value={manualLocation}
+                    onChange={(e) => setManualLocation(e.target.value)}
+                    placeholder="Enter city name (e.g., Chennai, India)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    onKeyPress={(e) => e.key === 'Enter' && useManualLocation()}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={useManualLocation}
+                      className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
+                    >
+                      Use This Location
+                    </button>
+                    <button
+                      onClick={() => {setShowManualInput(false); setManualLocation("")}}
+                      className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               
               {location && (
                 <div className="mt-2 space-y-2">
@@ -352,9 +579,21 @@ export function HeroSection() {
                 <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-start gap-2">
                     <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
-                    <p className="text-xs text-red-800">{error}</p>
+                    <div>
+                      <p className="text-xs font-semibold text-red-800 mb-1">Location Detection Issue</p>
+                      <p className="text-xs text-red-700">{error}</p>
+                      <div className="mt-2 text-xs text-red-600">
+                        <strong>Troubleshooting:</strong>
+                        <ul className="list-disc list-inside mt-1 space-y-1">
+                          <li>Make sure location services are enabled</li>
+                          <li>Allow location access when prompted</li>
+                          <li>Try refreshing the page</li>
+                          <li>Use demo data or manual entry as alternatives</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
