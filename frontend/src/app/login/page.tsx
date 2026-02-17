@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { signIn, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
@@ -12,34 +11,61 @@ export default function LoginPage() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [loading, setLoading] = useState(false)
-  const { data: session, status } = useSession()
+  const [error, setError] = useState("")
   const router = useRouter()
 
-  useEffect(() => {
-    if (session) {
-      router.push("/dashboard")
-    }
-  }, [session, router])
-
   const handleGoogleSignIn = () => {
-    console.log("Google sign in button clicked")
-    signIn("google", { callbackUrl: "/dashboard" })
+    setError("Google Sign-In requires OAuth configuration. Please use demo login or skip to homepage.")
+    console.log("Google OAuth not configured. Redirecting to setup instructions...")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // Handle regular email/password login/signup here
-    console.log(isLogin ? { email, password } : { firstName, lastName, email, password })
-    setLoading(false)
+    setError("")
+    
+    // Demo authentication - in production, this would call your backend API
+    try {
+      if (isLogin) {
+        // Demo login - accept any email/password for testing
+        if (email && password) {
+          console.log("Demo login successful:", { email })
+          // Store demo session
+          localStorage.setItem('demo_user', JSON.stringify({ 
+            email, 
+            name: email.split('@')[0],
+            loginTime: new Date().toISOString()
+          }))
+          router.push("/dashboard")
+        } else {
+          setError("Please enter email and password")
+        }
+      } else {
+        // Demo signup
+        if (firstName && lastName && email && password) {
+          console.log("Demo signup successful:", { firstName, lastName, email })
+          // Store demo session
+          localStorage.setItem('demo_user', JSON.stringify({ 
+            email, 
+            name: `${firstName} ${lastName}`,
+            loginTime: new Date().toISOString()
+          }))
+          router.push("/dashboard")
+        } else {
+          setError("Please fill in all fields")
+        }
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.")
+      console.error("Login error:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
-    )
+  const handleSkipLogin = () => {
+    // Allow users to skip login and go directly to homepage
+    router.push("/")
   }
 
   return (
@@ -54,7 +80,13 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-xl font-semibold text-center text-gray-900 mb-1">Welcome to FarmIQ</h1>
-        <p className="text-center text-sm text-gray-600 mb-6">Login to your account or create a new one</p>
+        <p className="text-center text-sm text-gray-600 mb-6">Demo Mode - Login with any credentials</p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
 
         <div className="relative flex bg-gray-100 rounded-full p-1 mb-6 overflow-hidden">
           {/* Sliding background */}
@@ -164,7 +196,7 @@ export default function LoginPage() {
                 <input type="checkbox" className="w-3.5 h-3.5 text-green-600 border-gray-300 rounded" />
                 <span className="ml-2 text-xs text-gray-700">Remember me</span>
               </label>
-              <Link href="/forgot-password" className="text-xs text-green-600 hover:text-green-700">Forgot password?</Link>
+              <button type="button" className="text-xs text-green-600 hover:text-green-700">Forgot password?</button>
             </div>
           )}
 
@@ -173,7 +205,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full text-white py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-primary"
           >
-            {loading ? "Loading..." : (isLogin ? "Login" : "Sign Up")}
+            {loading ? "Loading..." : (isLogin ? "Login (Demo)" : "Sign Up (Demo)")}
           </button>
         </form>
 
@@ -182,15 +214,26 @@ export default function LoginPage() {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <span className="px-2 bg-white text-gray-500">Or</span>
           </div>
         </div>
 
         <button 
           type="button" 
+          onClick={handleSkipLogin}
+          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all btn-3d btn-3d-secondary mb-3"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+          Skip Login & Go to Homepage
+        </button>
+
+        <button 
+          type="button" 
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-secondary"
+          className="w-full flex items-center justify-center gap-2 text-gray-700 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-secondary opacity-50 cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -198,8 +241,12 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          {loading ? "Signing in..." : "Continue with Google"}
+          Google Sign-In (Requires Setup)
         </button>
+
+        <p className="mt-4 text-center text-xs text-gray-500">
+          Demo Mode: Use any email/password to test the system
+        </p>
       </div>
 
 
