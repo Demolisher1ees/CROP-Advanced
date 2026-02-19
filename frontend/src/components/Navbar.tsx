@@ -29,18 +29,18 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#home" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+            <Link href="/" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               Home
-            </a>
+            </Link>
             <a href="#crops" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               Crops
             </a>
-            <a href="#about" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+            <Link href="/about" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               About
-            </a>
-            <a href="#contact" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+            </Link>
+            <Link href="/contact" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               Contact
-            </a>
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-4">

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import weather, soil, predict, auth
+from app.routes import weather, soil, predict, auth, contact, crops
 from app.database.db import engine, Base
 
 # Create database tables
@@ -27,6 +27,8 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])
 app.include_router(soil.router, prefix="/api/soil", tags=["Soil"])
 app.include_router(predict.router, prefix="/api/predict", tags=["Predictions"])
+app.include_router(contact.router, prefix="/api", tags=["Contact"])
+app.include_router(crops.router, prefix="/api", tags=["Crops"])
 
 
 @app.get("/")
