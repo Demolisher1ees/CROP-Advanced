@@ -184,23 +184,13 @@ const CropsPage = () => {
           </div>
           
           <div className="container relative mx-auto max-w-7xl px-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div>
-                <h1 className="text-4xl font-extrabold text-white mb-3 md:text-5xl">
-                  My Crops
-                </h1>
-                <p className="text-xl text-green-50">
-                  Monitor crop health, soil, and AI recommendations in real time
-                </p>
-              </div>
-              <Button
-                onClick={() => setIsAddModalOpen(true)}
-                size="lg"
-                className="gap-2 bg-white text-green-700 hover:bg-green-50 shadow-xl hover:shadow-2xl transition-all duration-300"
-              >
-                <Plus size={20} />
-                Add New Crop
-              </Button>
+            <div className="text-center">
+              <h1 className="text-4xl font-extrabold text-white mb-3 md:text-5xl">
+                My Crops
+              </h1>
+              <p className="text-xl text-green-50">
+                Monitor crop health, soil, and AI recommendations in real time
+              </p>
             </div>
           </div>
         </section>

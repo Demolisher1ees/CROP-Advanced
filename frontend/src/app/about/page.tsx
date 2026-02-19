@@ -235,10 +235,8 @@ const MissionVision = () => (
 
 /* ─── Team ─── */
 const team = [
-  { name: "Alex Johnson", role: "Frontend Developer", initials: "AJ", desc: "Crafts intuitive user interfaces for agricultural dashboards." },
-  { name: "Priya Sharma", role: "Backend Developer", initials: "PS", desc: "Architects scalable APIs and real-time data pipelines." },
-  { name: "David Chen", role: "ML Engineer", initials: "DC", desc: "Trains and optimizes crop prediction models." },
-  { name: "Maria Lopez", role: "UX Designer", initials: "ML", desc: "Designs farmer-friendly experiences and workflows." },
+  { name: "Srinjoy Paul", role: "Frontend & Backend Developer", initials: "SP", desc: "Develops full-stack solutions for agricultural platforms." },
+  { name: "Eeshan Ghosh", role: "Backend & ML Developer", initials: "EG", desc: "Builds ML models and backend systems for crop intelligence." },
 ];
 
 const Team = () => (
@@ -248,7 +246,7 @@ const Team = () => (
         <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Team</Badge>
         <h2 className="text-3xl font-bold text-foreground">Meet the Team</h2>
       </div>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 justify-center max-w-2xl mx-auto">
         {team.map(({ name, role, initials, desc }) => (
           <Card key={name} className="text-center border-border/60 shadow-sm hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">

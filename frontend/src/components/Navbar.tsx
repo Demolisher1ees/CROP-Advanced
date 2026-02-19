@@ -32,9 +32,9 @@ export function Navbar() {
             <Link href="/" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               Home
             </Link>
-            <a href="#crops" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+            <Link href="/crops" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               Crops
-            </a>
+            </Link>
             <Link href="/about" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               About
             </Link>

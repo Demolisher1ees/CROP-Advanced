@@ -184,7 +184,7 @@ const ContactPage = () => {
                           name="name"
                           value={formData.name}
                           onChange={handleChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400 ${
                             errors.name ? "border-red-500" : "border-gray-300"
                           }`}
                           placeholder="Your name"
@@ -208,7 +208,7 @@ const ContactPage = () => {
                           name="email"
                           value={formData.email}
                           onChange={handleChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400 ${
                             errors.email ? "border-red-500" : "border-gray-300"
                           }`}
                           placeholder="your.email@example.com"
@@ -232,7 +232,7 @@ const ContactPage = () => {
                           value={formData.message}
                           onChange={handleChange}
                           rows={6}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none ${
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-400 ${
                             errors.message ? "border-red-500" : "border-gray-300"
                           }`}
                           placeholder="Tell us how we can help you..."
@@ -298,8 +298,8 @@ const ContactPage = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 mb-2 text-lg">Email</h3>
-                      <a href="mailto:support@smartcropadvisor.com" className="text-green-600 hover:text-green-700 font-medium">
-                        support@smartcropadvisor.com
+                      <a href="mailto:noreplycropstation@gmail.com" className="text-green-600 hover:text-green-700 font-medium">
+                        noreplycropstation@gmail.com
                       </a>
                       <p className="text-sm text-gray-500 mt-1">We'll respond within 24 hours</p>
                     </div>
@@ -313,8 +313,8 @@ const ContactPage = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 mb-2 text-lg">Phone</h3>
-                      <a href="tel:+919876543210" className="text-green-600 hover:text-green-700 font-medium text-lg">
-                        +91 9876543210
+                      <a href="tel:+916290209568" className="text-green-600 hover:text-green-700 font-medium text-lg">
+                        +91 6290209568
                       </a>
                       <p className="text-sm text-gray-500 mt-1">Mon-Fri, 9AM-6PM IST</p>
                     </div>
