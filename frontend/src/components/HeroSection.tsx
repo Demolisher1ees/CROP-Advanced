@@ -444,7 +444,7 @@ export function HeroSection() {
             <h2 className="text-xl font-semibold text-gray-900">Get Crop Recommendations</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Location Input */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -599,70 +599,73 @@ export function HeroSection() {
               )}
             </div>
 
-            {/* Crop Selection */}
-            <div className="relative">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-                Select Crop
-              </label>
-              <div className="relative bubble-container">
-                <select 
-                  value={selectedCrop}
-                  onChange={(e) => setSelectedCrop(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all btn-3d btn-3d-detect cursor-pointer"
-                >
-                <option value="">Choose a crop</option>
-                <option>Bajra (Pearl Millet)</option>
-                <option>Barley</option>
-                <option>Black Gram (Urad)</option>
-                <option>Chickpea (Chana)</option>
-                <option>Coconut</option>
-                <option>Coffee</option>
-                <option>Corn (Maize)</option>
-                <option>Cotton</option>
-                <option>Groundnut (Peanut)</option>
-                <option>Jowar (Sorghum)</option>
-                <option>Jute</option>
-                <option>Lentil (Masoor)</option>
-                <option>Millet</option>
-                <option>Mustard</option>
-                <option>Onion</option>
-                <option>Pigeon Pea (Arhar/Tur)</option>
-                <option>Potato</option>
-                <option>Ragi (Finger Millet)</option>
-                <option>Rice (Paddy)</option>
-                <option>Sesame</option>
-                <option>Soybean</option>
-                <option>Sugarcane</option>
-                <option>Sunflower</option>
-                <option>Tea</option>
-                <option>Tomato</option>
-                <option>Wheat</option>
-              </select>
+            {/* Crop Selection and Submit Button */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Crop Selection */}
+              <div className="relative">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                  Select Crop
+                </label>
+                <div className="relative bubble-container">
+                  <select 
+                    value={selectedCrop}
+                    onChange={(e) => setSelectedCrop(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all btn-3d btn-3d-detect cursor-pointer"
+                  >
+                  <option value="">Choose a crop</option>
+                  <option>Bajra (Pearl Millet)</option>
+                  <option>Barley</option>
+                  <option>Black Gram (Urad)</option>
+                  <option>Chickpea (Chana)</option>
+                  <option>Coconut</option>
+                  <option>Coffee</option>
+                  <option>Corn (Maize)</option>
+                  <option>Cotton</option>
+                  <option>Groundnut (Peanut)</option>
+                  <option>Jowar (Sorghum)</option>
+                  <option>Jute</option>
+                  <option>Lentil (Masoor)</option>
+                  <option>Millet</option>
+                  <option>Mustard</option>
+                  <option>Onion</option>
+                  <option>Pigeon Pea (Arhar/Tur)</option>
+                  <option>Potato</option>
+                  <option>Ragi (Finger Millet)</option>
+                  <option>Rice (Paddy)</option>
+                  <option>Sesame</option>
+                  <option>Soybean</option>
+                  <option>Sugarcane</option>
+                  <option>Sunflower</option>
+                  <option>Tea</option>
+                  <option>Tomato</option>
+                  <option>Wheat</option>
+                </select>
+                </div>
               </div>
-            </div>
 
-            {/* Submit Button */}
-            <div className="flex items-end">
-              <button 
-                onClick={handleGetRecommendations}
-                disabled={!selectedCrop || !weatherData || !soilData || isAnalyzing}
-                className="w-full text-white px-6 py-3 rounded-lg font-medium transition-all btn-3d btn-3d-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAnalyzing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Analyzing...
-                  </span>
-                ) : (
-                  'Get Recommendations'
-                )}
-              </button>
+              {/* Submit Button */}
+              <div className="flex flex-col justify-end">
+                <button 
+                  onClick={handleGetRecommendations}
+                  disabled={!selectedCrop || !weatherData || !soilData || isAnalyzing}
+                  className="w-full text-white px-6 py-3 rounded-lg font-medium transition-all btn-3d btn-3d-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAnalyzing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Analyzing...
+                    </span>
+                  ) : (
+                    'Get Recommendations'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

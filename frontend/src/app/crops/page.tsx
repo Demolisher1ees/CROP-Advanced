@@ -337,6 +337,15 @@ const CropsPage = () => {
         </section>
       </main>
 
+      {/* Floating Add Button - Always visible */}
+      <button
+        onClick={() => setIsAddModalOpen(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 z-40 flex items-center justify-center group hover:scale-110"
+        title="Add New Crop"
+      >
+        <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+      </button>
+
       {/* Add Crop Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -362,7 +371,7 @@ const CropsPage = () => {
                   required
                   value={newCrop.crop_name}
                   onChange={(e) => setNewCrop({ ...newCrop, crop_name: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
                   placeholder="e.g., Rice, Wheat, Corn"
                 />
               </div>
@@ -375,7 +384,7 @@ const CropsPage = () => {
                   required
                   value={newCrop.location}
                   onChange={(e) => setNewCrop({ ...newCrop, location: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
                   placeholder="e.g., Kolkata, West Bengal"
                 />
               </div>
@@ -389,7 +398,7 @@ const CropsPage = () => {
                     step="any"
                     value={newCrop.latitude}
                     onChange={(e) => setNewCrop({ ...newCrop, latitude: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
                     placeholder="22.5726"
                   />
                 </div>
@@ -402,7 +411,7 @@ const CropsPage = () => {
                     step="any"
                     value={newCrop.longitude}
                     onChange={(e) => setNewCrop({ ...newCrop, longitude: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
                     placeholder="88.3639"
                   />
                 </div>
@@ -412,7 +421,7 @@ const CropsPage = () => {
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 text-gray-900 border-gray-300 hover:bg-gray-100"
                 >
                   Cancel
                 </Button>
