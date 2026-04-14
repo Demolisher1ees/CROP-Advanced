@@ -19,7 +19,7 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (session) {
-      router.push("/dashboard")
+      router.push("/crops")
     }
   }, [session, router])
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
     try {
       setLoading(true)
       setError("")
-      await signIn("google", { callbackUrl: "/dashboard" })
+      await signIn("google", { callbackUrl: "/crops" })
     } catch (err) {
       console.error("Google sign-in error:", err)
       setError("Failed to sign in with Google. Please try again.")
@@ -76,7 +76,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Account created but login failed. Please try logging in.")
       } else {
-        router.push("/dashboard")
+        router.push("/crops")
       }
     } catch (err: any) {
       setError(err.message || "Signup failed. Please try again.")
@@ -96,7 +96,7 @@ export default function LoginPage() {
       console.error("Login error:", result.error)
       setError(`Login failed: ${result.error}`)
     } else {
-      router.push("/dashboard")
+      router.push("/crops")
     }
   }
 
@@ -172,7 +172,7 @@ export default function LoginPage() {
               isLogin ? "text-gray-900" : "text-gray-600 hover:text-gray-800"
             }`}
           >
-            Login
+            Sign In
           </button>
           <button
             onClick={() => setIsLogin(false)}
@@ -184,7 +184,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" style={{ animation: "slideInRight 0.3s ease-in-out" }}>
           {!isLogin && (
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -295,7 +295,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full text-white py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:transform-none disabled:shadow-none btn-3d btn-3d-primary"
           >
-            {loading ? "Loading..." : (isLogin ? "Login" : "Sign Up")}
+            {loading ? "Loading..." : (isLogin ? "Sign In" : "Sign Up")}
           </button>
         </form>
 

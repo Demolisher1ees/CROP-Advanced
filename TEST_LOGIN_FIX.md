@@ -179,7 +179,7 @@ NEXTAUTH_URL=http://localhost:3001
 
 5. **Restart all services**:
    ```bash
-   cd smart-crop-advisor
+   cd farmiq
    docker-compose down
    docker-compose up -d
    ```

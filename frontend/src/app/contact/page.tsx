@@ -1,21 +1,23 @@
 "use client"
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useAuthModalContext } from "@/components/AuthModalProvider";
 import { Navbar } from "@/components/Navbar";
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, ChevronDown, Leaf, Sprout, LayoutDashboard, ArrowRight } from "lucide-react";
+import { Mail, MapPin, Send, CheckCircle2, AlertCircle, ChevronDown, Leaf, Sprout, LayoutDashboard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 const ContactPage = () => {
+  const { data: session } = useSession();
+  const { setIsAuthModalOpen } = useAuthModalContext();
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: session?.user?.name || "",
     message: "",
   });
   const [errors, setErrors] = useState({
     name: "",
-    email: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,23 +26,11 @@ const ContactPage = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const validateForm = () => {
-    const newErrors = {
-      name: "",
-      email: "",
-      message: "",
-    };
+    const newErrors = { name: "", message: "" };
     let isValid = true;
 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
-      isValid = false;
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-      isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
       isValid = false;
     }
 
@@ -55,6 +45,13 @@ const ContactPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!session) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     setSubmitError("");
     setSubmitSuccess(false);
 
@@ -65,17 +62,22 @@ const ContactPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/contact", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: session?.user?.email || "",
+          message: formData.message,
+        }),
       });
 
       if (response.ok) {
         setSubmitSuccess(true);
-        setFormData({ name: "", email: "", message: "" });
+        setFormData({ name: "", message: "" });
         setTimeout(() => setSubmitSuccess(false), 5000);
       } else {
         setSubmitError("Failed to send message. Please try again.");
@@ -141,7 +143,7 @@ const ContactPage = () => {
               Contact Us
             </h1>
             <p className="mx-auto max-w-2xl text-xl text-gray-600">
-              Have questions or need help with your crops? Reach out to our team and we'll get back to you as soon as possible.
+              Have questions or need help with your crops? Reach out to our team and we&apos;ll get back to you as soon as possible.
             </p>
           </div>
         </section>
@@ -169,7 +171,7 @@ const ContactPage = () => {
                       </div>
                       <CardTitle className="text-2xl text-gray-900">Send us a Message</CardTitle>
                     </div>
-                    <p className="text-gray-600">Fill out the form below and we'll respond within 24 hours</p>
+                    <p className="text-gray-600">Fill out the form below and we&apos;ll respond within 24 hours</p>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,39 +186,18 @@ const ContactPage = () => {
                           name="name"
                           value={formData.name}
                           onChange={handleChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400 ${
+                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 ${
                             errors.name ? "border-red-500" : "border-gray-300"
                           }`}
                           placeholder="Your name"
+                          style={{
+                            '--tw-placeholder-opacity': '1',
+                          } as React.CSSProperties}
                         />
                         {errors.name && (
                           <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                             <AlertCircle size={14} />
                             {errors.name}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Email Field */}
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400 ${
-                            errors.email ? "border-red-500" : "border-gray-300"
-                          }`}
-                          placeholder="your.email@example.com"
-                        />
-                        {errors.email && (
-                          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                            <AlertCircle size={14} />
-                            {errors.email}
                           </p>
                         )}
                       </div>
@@ -232,10 +213,13 @@ const ContactPage = () => {
                           value={formData.message}
                           onChange={handleChange}
                           rows={6}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-400 ${
+                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none text-gray-900 ${
                             errors.message ? "border-red-500" : "border-gray-300"
                           }`}
                           placeholder="Tell us how we can help you..."
+                          style={{
+                            '--tw-placeholder-opacity': '1',
+                          } as React.CSSProperties}
                         />
                         {errors.message && (
                           <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -248,13 +232,22 @@ const ContactPage = () => {
                       {/* Submit Button */}
                       <Button
                         type="submit"
-                        disabled={isSubmitting}
-                        className="w-full gap-2 py-6 text-base bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all duration-200"
+                        disabled={isSubmitting || !session}
+                        className={`w-full gap-2 py-6 text-base shadow-md hover:shadow-lg transition-all duration-200 ${
+                          !session
+                            ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-gray-600"
+                            : "bg-green-600 hover:bg-green-700 text-white"
+                        }`}
                       >
                         {isSubmitting ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Sending...
+                          </>
+                        ) : !session ? (
+                          <>
+                            <Send size={18} />
+                            Sign In to Send
                           </>
                         ) : (
                           <>
@@ -268,7 +261,7 @@ const ContactPage = () => {
                       {submitSuccess && (
                         <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-800">
                           <CheckCircle2 size={20} />
-                          <span>Message sent successfully! We'll get back to you soon.</span>
+                          <span>Message sent successfully! We&apos;ll get back to you soon.</span>
                         </div>
                       )}
 
@@ -301,22 +294,7 @@ const ContactPage = () => {
                       <a href="mailto:noreplycropstation@gmail.com" className="text-green-600 hover:text-green-700 font-medium">
                         noreplycropstation@gmail.com
                       </a>
-                      <p className="text-sm text-gray-500 mt-1">We'll respond within 24 hours</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white border-2 border-green-100 shadow-lg rounded-xl hover:shadow-xl hover:border-green-200 transition-all duration-300 group">
-                  <CardContent className="flex items-start gap-4 p-6">
-                    <div className="rounded-xl bg-green-100 p-4 text-green-600 group-hover:bg-green-600 group-hover:text-white transition-all duration-300">
-                      <Phone size={28} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-2 text-lg">Phone</h3>
-                      <a href="tel:+916290209568" className="text-green-600 hover:text-green-700 font-medium text-lg">
-                        +91 6290209568
-                      </a>
-                      <p className="text-sm text-gray-500 mt-1">Mon-Fri, 9AM-6PM IST</p>
+                      <p className="text-sm text-gray-500 mt-1">We&apos;ll respond within 24 hours</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -422,8 +400,8 @@ const ContactPage = () => {
               Join thousands of farmers using AI-powered insights to grow smarter, healthier crops with data-driven recommendations.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link href="/dashboard">
-                <Button size="lg" variant="secondary" className="gap-2 px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300">
+              <Link href="/crops">
+                <Button size="lg" className="gap-2 px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 text-green-700 border-2 border-white bg-white hover:bg-green-50">
                   <LayoutDashboard size={20} /> Go to Dashboard
                 </Button>
               </Link>

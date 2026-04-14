@@ -4,9 +4,11 @@ import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useState } from "react"
 import { clearAllCookies } from "@/lib/clearCookies"
+import { useAuthModalContext } from "@/components/AuthModalProvider"
 
 export function Navbar() {
   const { data: session, status } = useSession()
+  const { isNavGlow, setIsAuthModalOpen } = useAuthModalContext()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   const handleSignOut = async () => {
@@ -32,9 +34,16 @@ export function Navbar() {
             <Link href="/" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               Home
             </Link>
-            <Link href="/crops" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
-              Crops
-            </Link>
+            {session ? (
+              <Link href="/crops" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
+                Crops
+              </Link>
+            ) : (
+              <div className="text-gray-400 font-medium cursor-not-allowed opacity-50">
+                Crops
+              </div>
+            )}
+
             <Link href="/about" className="text-gray-700 hover:text-green-600 transition-colors font-medium">
               About
             </Link>
@@ -56,15 +65,10 @@ export function Navbar() {
                   />
                 )}
                 <span className="text-sm font-medium text-gray-900">{session.user?.name}</span>
-                <Link href="/dashboard">
-                  <button className="text-white px-4 py-2 rounded-lg font-medium transition-all btn-3d btn-3d-primary">
-                    Dashboard
-                  </button>
-                </Link>
                 <button
                   onClick={handleSignOut}
                   disabled={isSigningOut}
-                  className="text-gray-600 hover:text-red-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   {isSigningOut ? (
                     <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -80,11 +84,12 @@ export function Navbar() {
                 </button>
               </div>
             ) : (
-              <Link href="/login">
-                <button className="text-white px-6 py-2 rounded-lg font-medium transition-all btn-3d btn-3d-primary">
-                  Get Started
-                </button>
-              </Link>
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className={`text-white px-6 py-2 rounded-lg font-medium transition-all btn-3d btn-3d-primary ${isNavGlow ? "animate-pulseGlow-shake" : ""}`}
+              >
+                Get Started
+              </button>
             )}
           </div>
 

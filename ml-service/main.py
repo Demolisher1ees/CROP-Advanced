@@ -12,6 +12,20 @@ import os
 DATASET_PATH = Path("data/crop_data.csv")
 crop_df = None
 
+# Placeholder for ML model
+model = None
+MODEL_PATH = Path("model.joblib")
+try:
+    if MODEL_PATH.exists():
+        import joblib
+        model = joblib.load(MODEL_PATH)
+        print(f"✅ Loaded ML model from {MODEL_PATH}")
+    else:
+        print("⚠️ No pre-trained ML model found, using rule-based logic")
+except Exception as e:
+    print(f"❌ Error loading ML model: {e}")
+    model = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -46,7 +60,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     print("🛑 Shutting down ML service")
 
-app = FastAPI(title="Smart Crop Advisor ML Service", lifespan=lifespan)
+app = FastAPI(title="FarmIQ ML Service", lifespan=lifespan)
 
 # CORS middleware
 app.add_middleware(
@@ -90,7 +104,7 @@ class CropAnalysisResponse(BaseModel):
 @app.get("/")
 async def root():
     return {
-        "service": "Smart Crop Advisor ML Service",
+        "service": "FarmIQ ML Service",
         "status": "running",
         "dataset_loaded": crop_df is not None,
         "total_crops": len(crop_df) if crop_df is not None else 0
@@ -155,11 +169,42 @@ async def analyze_crop(input_data: CropInput):
     
     env = input_data.environment
     
-    # Calculate suitability score
-    score = calculate_suitability_score(crop_stats, env)
-    
-    # Generate recommendations
-    recommendations = generate_recommendations(crop_stats, env, input_data.crop_name)
+    # If a trained model was loaded at startup, use it for prediction
+    if model is not None:
+        try:
+            # prepare a feature dict matching training data expectations
+            feature_dict = {
+                'temperature': env.temperature,
+                'humidity': env.humidity,
+                'precipitation': env.precipitation,
+                'ph': env.ph,
+                'nitrogen': env.nitrogen,
+                'sand': env.sand,
+                'clay': env.clay,
+                'organic_carbon': env.organic_carbon,
+            }
+            # note: model must accept a DataFrame or 2D array
+            df = pd.DataFrame([feature_dict])
+            pred = model.predict(df)
+            # assume model returns a numeric suitability score
+            score = float(pred[0])
+            recommendations = []
+            # optionally the model could output recommendation flags
+            recommendations.append(Recommendation(
+                category="ML Model",
+                priority="low",
+                message="Prediction provided by trained model",
+                action="Refer to rule-based suggestions for additional guidance."
+            ))
+        except Exception as e:
+            # fallback to rule-based if model fails
+            print(f"Model inference error: {e}")
+            score = calculate_suitability_score(crop_stats, env)
+            recommendations = generate_recommendations(crop_stats, env, input_data.crop_name)
+    else:
+        # no model available, use deterministic logic
+        score = calculate_suitability_score(crop_stats, env)
+        recommendations = generate_recommendations(crop_stats, env, input_data.crop_name)
     
     # Ensure score is valid
     if pd.isna(score) or np.isnan(score) or np.isinf(score):

@@ -1,8 +1,8 @@
-# 🌾 Smart Crop Advisor
+# 🌾 FarmIQ
 
 An AI-powered crop recommendation system that analyzes real-time environmental data to provide intelligent farming advice.
 
-![Smart Crop Advisor](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![FarmIQ](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-Enabled-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![Python](https://img.shields.io/badge/Python-3.10-blue)
@@ -42,8 +42,8 @@ An AI-powered crop recommendation system that analyzes real-time environmental d
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/smart-crop-advisor.git
-   cd smart-crop-advisor
+   git clone https://github.com/yourusername/farmiq.git
+   cd farmiq
    ```
 
 2. **Start all services**
@@ -189,21 +189,137 @@ The system evaluates crops based on:
 
 ## 🛠️ API Endpoints
 
-### ML Service (Port 8001)
-- `GET /` - Service status
-- `GET /crops` - List all available crops
-- `POST /analyze` - Analyze crop suitability
-- `GET /docs` - Interactive API documentation
+### Backend API (Port 8000)
 
-### Backend (Port 8000)
-- Authentication and user management
-- Data persistence
-- API gateway functionality
+#### Authentication Endpoints
+
+**POST /api/auth/signup** - Register a new user
+```bash
+curl -X POST http://localhost:8000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePassword123",
+    "first_name": "John",
+    "last_name": "Doe"
+  }'
+```
+
+**POST /api/auth/login** - Authenticate and get JWT token
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePassword123"
+  }'
+```
+
+#### Crop Endpoints
+
+**GET /api/crops** - Get all crops
+```bash
+curl -X GET http://localhost:8000/api/crops
+```
+
+**POST /api/crops** - Create a crop record
+```bash
+curl -X POST http://localhost:8000/api/crops \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "crop_name": "Rice",
+    "location": "Punjab",
+    "latitude": 31.5204,
+    "longitude": 74.3587
+  }'
+```
+
+#### Contact Endpoint
+
+**POST /api/contact** - Submit contact form
+```bash
+curl -X POST http://localhost:8000/api/contact \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Farmer Name",
+    "email": "farmer@example.com",
+    "message": "I need assistance with crop selection"
+  }'
+```
+
+#### Prediction Endpoints
+
+**POST /api/predict/crop** - Get crop recommendations
+```bash
+curl -X POST http://localhost:8000/api/predict/crop \
+  -H "Content-Type: application/json" \
+  -d '{
+    "temperature": 25.5,
+    "humidity": 65.0,
+    "ph": 6.5,
+    "rainfall": 1200.0,
+    "nitrogen": 50,
+    "phosphorus": 20,
+    "potassium": 30
+  }'
+```
+
+### ML Service API (Port 8001)
+
+**GET /health** - Check ML service status
+```bash
+curl http://localhost:8001/health
+```
+
+**GET /crops** - List all available crops
+```bash
+curl http://localhost:8001/crops
+```
+
+**POST /analyze** - Analyze crop suitability
+```bash
+curl -X POST http://localhost:8001/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "temperature": 25.0,
+    "humidity": 60.0,
+    "ph": 6.5,
+    "rainfall": 1000.0,
+    "nitrogen": 45,
+    "phosphorus": 15,
+    "potassium": 25
+  }'
+```
+
+### Additional Endpoints
+
+**GET /health** - Backend health check
+```bash
+curl http://localhost:8000/health
+```
+
+Response:
+```json
+{
+  "status": "healthy"
+}
+```
+
+**GET /docs** - Interactive API documentation (Swagger UI)
+```
+http://localhost:8000/docs
+```
+
+**GET /redoc** - Alternative API documentation (ReDoc)
+```
+http://localhost:8000/redoc
+```
 
 ## 📁 Project Structure
 
 ```
-smart-crop-advisor/
+farmiq/
 ├── data/
 │   └── crop_data.csv          # 26 crops with growing conditions
 ├── ml-service/                # Python ML service

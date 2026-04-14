@@ -1,6 +1,10 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 import os
+from pathlib import Path
+
+# Always resolve .env relative to this file's location (backend root)
+ENV_FILE = Path(__file__).parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -12,17 +16,44 @@ class Settings(BaseSettings):
     
     # API Keys
     WEATHER_API_KEY: Optional[str] = None
+    GOOGLE_MAPS_API_KEY: Optional[str] = None
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    
+    # Email Configuration
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: Optional[int] = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    
+    # Authentication
+    AUTH_SECRET: Optional[str] = None
     
     # Application
-    DEBUG: bool = True
-    SECRET_KEY: str = "change-this-secret-key-in-production"
-    JWT_SECRET_KEY: str = "jwt-secret-key-change-in-production"
+    # use environment variable so production won't run in debug mode
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    SECRET_KEY: str  # must be provided via environment
+    JWT_SECRET_KEY: str  # must be provided via environment
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
+    from pydantic import root_validator
+
+    @root_validator(pre=True)
+    def check_secrets(cls, values):
+        # ensure critical secrets are set and not empty
+        if not values.get('SECRET_KEY'):
+            raise ValueError("SECRET_KEY environment variable is required")
+        if not values.get('JWT_SECRET_KEY'):
+            raise ValueError("JWT_SECRET_KEY environment variable is required")
+        if not values.get('AUTH_SECRET') and not os.getenv('AUTH_SECRET'):
+            # frontend secret for NextAuth may also be used
+            pass  # not critical for backend but note for documentation
+        return values
+
+    class Config:
+        env_file = str(ENV_FILE)
+        env_file_encoding = "utf-8"
+        case_sensitive = True
 
 settings = Settings()

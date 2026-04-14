@@ -1,19 +1,26 @@
 # Frontend Dockerfile
-FROM node:18-alpine
 
+# --- Build stage ---
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy application code
+# Copy source code and build
 COPY . .
+RUN npm run build
 
-# Expose port
+# --- Production stage ---
+FROM node:18-alpine
+WORKDIR /app
+
+# Copy built files and dependencies from builder
+COPY --from=builder /app .
+
+# Expose port for production
 EXPOSE 3001
 
-# Start development server on port 3001
-CMD ["npm", "run", "dev", "--", "-p", "3001"]
+# Use production start command
+CMD ["npm", "start"]

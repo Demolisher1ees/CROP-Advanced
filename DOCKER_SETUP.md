@@ -1,4 +1,4 @@
-# Docker Setup Guide for Smart Crop Advisor
+# Docker Setup Guide for FarmIQ
 
 ## 🐳 Complete System Architecture
 
@@ -42,14 +42,14 @@
 ### Step 1: Create Data Directory
 
 ```bash
-mkdir -p smart-crop-advisor/data
+mkdir -p farmiq/data
 ```
 
 ### Step 2: Place Your CSV File
 
 Copy your crop dataset CSV to:
 ```
-smart-crop-advisor/data/crop_data.csv
+farmiq/data/crop_data.csv
 ```
 
 ### Step 3: CSV Format Requirements
@@ -80,7 +80,7 @@ Corn,18,30,55,75,5.8,7.0,150,Medium
 
 ```bash
 # Navigate to project root
-cd smart-crop-advisor
+cd farmiq
 
 # Build and start all services
 docker-compose up --build

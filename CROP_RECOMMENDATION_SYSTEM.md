@@ -1,4 +1,4 @@
-# 🌾 Smart Crop Recommendation System
+# 🌾 FarmIQ - AI-Powered Crop Intelligence System
 
 ## Complete Implementation Guide
 
@@ -44,16 +44,16 @@ A complete Docker-based crop recommendation system that:
 
 ```bash
 # Your CSV is already created at:
-smart-crop-advisor/data/crop_data.csv
+farmiq/data/crop_data.csv
 
 # Or replace with your own dataset
-cp /path/to/your/crop_data.csv smart-crop-advisor/data/
+cp /path/to/your/crop_data.csv farmiq/data/
 ```
 
 ### Step 2: Start Docker Services
 
 ```bash
-cd smart-crop-advisor
+cd farmiq
 
 # Start all services
 docker-compose up --build

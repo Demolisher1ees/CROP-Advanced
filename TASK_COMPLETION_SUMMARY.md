@@ -144,7 +144,7 @@
 
 1. **Install backend dependencies**:
    ```bash
-   cd smart-crop-advisor/backend
+   cd farmiq/backend
    pip install -r requirements.txt
    ```
 
@@ -155,13 +155,13 @@
 
 3. **Start frontend** (in another terminal):
    ```bash
-   cd smart-crop-advisor/frontend
+   cd farmiq/frontend
    npm run dev
    ```
 
 4. **Test authentication**:
    ```bash
-   cd smart-crop-advisor/backend
+   cd farmiq/backend
    python test_auth.py
    ```
 

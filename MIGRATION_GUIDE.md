@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Smart Crop Advisor has been upgraded from demo authentication to a real, production-ready authentication system. This guide helps you migrate.
+FarmIQ has been upgraded from demo authentication to a real, production-ready authentication system. This guide helps you migrate.
 
 ## What Changed
 
@@ -28,7 +28,7 @@ The Smart Crop Advisor has been upgraded from demo authentication to a real, pro
 #### 1. Update Backend Dependencies
 
 ```bash
-cd smart-crop-advisor/backend
+cd farmiq/backend
 pip install -r requirements.txt
 ```
 

@@ -1,3 +1,3 @@
-"""Smart Crop Advisor Backend Application"""
+"""FarmIQ Backend Application"""
 
 __version__ = "1.0.0"

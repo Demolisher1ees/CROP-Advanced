@@ -81,7 +81,7 @@ http://localhost:3000/api/auth/callback/google
 ```
 
 ### OAuth Consent Screen:
-- App name: Smart Crop Advisor (or your choice)
+- App name: FarmIQ (or your choice)
 - User support email: Your email
 - Scopes: email, profile, openid
 - Test users: Your email (if app is in testing mode)

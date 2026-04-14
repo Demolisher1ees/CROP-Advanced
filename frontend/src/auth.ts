@@ -6,10 +6,14 @@ import Credentials from "next-auth/providers/credentials"
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
+  basePath: "/api/auth",
+  secret: process.env.AUTH_SECRET,
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       name: "Credentials",
@@ -17,7 +21,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials: any, req: any) {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -61,12 +65,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = user.accessToken
+        token.accessToken = (user as any).accessToken
       }
       return token
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken
+      (session as any).accessToken = (token as any).accessToken
       return session
     }
   }

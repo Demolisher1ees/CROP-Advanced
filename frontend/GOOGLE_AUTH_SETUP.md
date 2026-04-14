@@ -1,13 +1,13 @@
-# 🔐 Complete Google OAuth Setup Guide for Smart Crop Advisor
+# 🔐 Complete Google OAuth Setup Guide for FarmIQ
 
-This guide will walk you through setting up Google OAuth authentication for your Smart Crop Advisor application.
+This guide will walk you through setting up Google OAuth authentication for your FarmIQ application.
 
 ---
 
 ## 📋 Prerequisites
 
 - Google Account
-- Smart Crop Advisor project running locally
+- FarmIQ project running locally
 - Basic understanding of environment variables
 
 ---
@@ -23,7 +23,7 @@ This guide will walk you through setting up Google OAuth authentication for your
 2. **Create a New Project**
    - Click the project dropdown at the top
    - Click "New Project"
-   - Enter project name: `Smart Crop Advisor` (or your preferred name)
+   - Enter project name: `FarmIQ` (or your preferred name)
    - Click "Create"
    - Wait for the project to be created (takes a few seconds)
 
@@ -57,7 +57,7 @@ This guide will walk you through setting up Google OAuth authentication for your
    - Click "Create"
 
 3. **Fill in App Information**
-   - **App name**: `Smart Crop Advisor`
+   - **App name**: `FarmIQ`
    - **User support email**: Your email address
    - **App logo**: (Optional) Upload your app logo
    - **Application home page**: `http://localhost:3001`
@@ -99,7 +99,7 @@ This guide will walk you through setting up Google OAuth authentication for your
 
 3. **Configure OAuth Client**
    - **Application type**: Select "Web application"
-   - **Name**: `Smart Crop Advisor Web Client`
+   - **Name**: `FarmIQ Web Client`
    
 4. **Add Authorized JavaScript Origins**
    - Click "+ Add URI" under "Authorized JavaScript origins"
@@ -125,7 +125,7 @@ This guide will walk you through setting up Google OAuth authentication for your
 ### Step 5: Install Required Packages
 
 ```bash
-cd smart-crop-advisor/frontend
+cd farmiq/frontend
 
 # Install NextAuth.js v5
 npm install next-auth@beta
@@ -174,8 +174,7 @@ export { handler as GET, handler as POST }
 
 1. **Open your `.env.local` file**
    ```bash
-   cd smart-crop-advisor/frontend
-   nano .env.local  # or use your preferred editor
+cd farmiq/frontend
    ```
 
 2. **Add/Update these variables**
@@ -382,4 +381,4 @@ Once configured, your users can:
 - Have persistent sessions
 - Sign out when needed
 
-Your Smart Crop Advisor now has professional authentication! 🌾🔐
+Your FarmIQ now has professional authentication! 🌾🔐

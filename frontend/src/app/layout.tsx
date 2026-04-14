@@ -2,11 +2,13 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Providers from '@/components/Providers'
+import { AuthModalProvider } from '@/components/AuthModalProvider'
+import { AuthModal } from '@/components/AuthModal'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Smart Crop Advisor',
+  title: 'FarmIQ',
   description: 'AI-powered crop recommendation system',
 }
 
@@ -18,7 +20,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <AuthModalProvider>
+            <AuthModal />
+            {children}
+          </AuthModalProvider>
+        </Providers>
       </body>
     </html>
   )
