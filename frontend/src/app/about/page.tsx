@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Leaf, Sun, Droplets, MapPin, Cpu, CloudSun, BarChart3,
   Sprout, Zap, Globe, Server, LayoutDashboard, Target,
@@ -10,9 +12,31 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
+import { useAuthModalContext } from "@/components/AuthModalProvider";
+import { useSession } from "next-auth/react";
 
 /* ─── Hero ─── */
-const Hero = () => (
+const Hero = () => {
+  const { setIsAuthModalOpen, triggerNavGlow } = useAuthModalContext()
+  const { data: session } = useSession()
+
+  const handleGetStarted = () => {
+    if (!session) {
+      triggerNavGlow()
+    } else {
+      window.location.href = '/'
+    }
+  }
+
+  const handleGetRecs = () => {
+    if (!session) {
+      triggerNavGlow()
+    } else {
+      window.location.href = '/'
+    }
+  }
+
+  return (
   <section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-green-100 to-green-50 py-24 md:py-32">
     <div className="absolute inset-0 opacity-10">
       <div className="absolute top-10 left-10 text-primary"><Leaf size={120} /></div>
@@ -22,7 +46,7 @@ const Hero = () => (
     <div className="container relative mx-auto max-w-5xl px-4 text-center">
       <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-primary">
         <Leaf size={20} />
-        <span className="text-sm font-semibold tracking-wide uppercase">Smart Crop Advisor</span>
+        <span className="text-sm font-semibold tracking-wide uppercase">FarmIQ</span>
       </div>
       <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-foreground md:text-6xl">
         AI-Powered Real-Time<br />
@@ -32,20 +56,21 @@ const Hero = () => (
         Optimize crop health and boost productivity with real-time soil and weather analysis powered by machine learning — actionable insights delivered to your fingertips.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-4">
-        <Link href="/dashboard">
+        <button onClick={handleGetStarted}>
           <Button size="lg" className="gap-2">
-            <LayoutDashboard size={18} /> Go to Dashboard
+            <LayoutDashboard size={18} /> Go to Home
           </Button>
-        </Link>
-        <Link href="/">
+        </button>
+        <button onClick={handleGetRecs}>
           <Button size="lg" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5">
             <Sprout size={18} /> Get Recommendations
           </Button>
-        </Link>
+        </button>
       </div>
     </div>
   </section>
-);
+  )
+}
 
 /* ─── Project Overview ─── */
 const Overview = () => (
@@ -54,9 +79,9 @@ const Overview = () => (
       <div className="grid items-center gap-12 md:grid-cols-2">
         <div>
           <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">About the Platform</Badge>
-          <h2 className="mb-6 text-3xl font-bold text-foreground">What is Smart Crop Advisor?</h2>
+          <h2 className="mb-6 text-3xl font-bold text-foreground">What is FarmIQ?</h2>
           <p className="mb-4 text-muted-foreground leading-relaxed">
-            Smart Crop Advisor is an intelligent agricultural platform that bridges the gap between farmers and modern technology. Many farmers lack access to real-time, data-driven insights about soil conditions and weather patterns that directly impact crop health.
+            FarmIQ is an intelligent agricultural platform that bridges the gap between farmers and modern technology. Many farmers lack access to real-time, data-driven insights about soil conditions and weather patterns that directly impact crop health.
           </p>
           <p className="text-muted-foreground leading-relaxed">
             Our platform solves this by combining real-time environmental data with machine learning to deliver personalized crop care recommendations — from irrigation schedules to fertilization plans — helping farmers make smarter, faster decisions.
@@ -279,7 +304,7 @@ const WhyChoose = () => (
     <div className="container mx-auto max-w-4xl px-4">
       <div className="mb-14 text-center">
         <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Why Us</Badge>
-        <h2 className="text-3xl font-bold text-foreground">Why Choose Smart Crop Advisor?</h2>
+        <h2 className="text-3xl font-bold text-foreground">Why Choose FarmIQ?</h2>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {reasons.map((r) => (
@@ -294,7 +319,8 @@ const WhyChoose = () => (
 );
 
 /* ─── Footer CTA ─── */
-const FooterCTA = () => (
+const FooterCTA = () => {
+  return (
   <section className="bg-primary py-20">
     <div className="container mx-auto max-w-3xl px-4 text-center">
       <Leaf className="mx-auto mb-6 text-primary-foreground" size={40} />
@@ -302,21 +328,11 @@ const FooterCTA = () => (
       <p className="mx-auto mb-8 max-w-xl text-primary-foreground/80">
         Join thousands of farmers using AI-powered insights to grow smarter, healthier crops.
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-4">
-        <Link href="/dashboard">
-          <Button size="lg" variant="secondary" className="gap-2">
-            <LayoutDashboard size={18} /> Go to Dashboard
-          </Button>
-        </Link>
-        <Link href="/">
-          <Button size="lg" variant="outline" className="gap-2 border-white bg-white !text-black hover:bg-green-50 hover:!text-black">
-            <ArrowRight size={18} /> Get Recommendations
-          </Button>
-        </Link>
-      </div>
+
     </div>
   </section>
-);
+  )
+}
 
 /* ─── Main About Page ─── */
 export default function AboutPage() {

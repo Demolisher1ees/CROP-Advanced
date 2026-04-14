@@ -39,30 +39,50 @@ input:-webkit-autofill:active {
 
 /* Ensure password dots are visible */
 input[type="password"] {
-  font-family: text-security-disc;
+  font-family: inherit;
   -webkit-text-security: disc;
 }
 
-/* Lighter placeholder text - very subtle */
+/* Placeholder text - darker and visible */
 input::placeholder,
 textarea::placeholder {
-  color: #D1D5DB !important;
-  opacity: 0.4 !important;
+  color: #6B7280 !important;
+  opacity: 1 !important;
 }
 
 input::-webkit-input-placeholder {
-  color: #D1D5DB !important;
-  opacity: 0.4 !important;
+  color: #6B7280 !important;
+  opacity: 1 !important;
 }
 
 input::-moz-placeholder {
-  color: #D1D5DB !important;
-  opacity: 0.4 !important;
+  color: #6B7280 !important;
+  opacity: 1 !important;
 }
 
 input:-ms-input-placeholder {
-  color: #D1D5DB !important;
-  opacity: 0.4 !important;
+  color: #6B7280 !important;
+  opacity: 1 !important;
+}
+
+.hero-text-input::placeholder,
+.hero-select::placeholder {
+  color: #6B7280 !important;
+  opacity: 1 !important;
+}
+
+.hero-text-input,
+.hero-select {
+  color: #111827 !important;
+}
+
+/* Disabled select cursor */
+select:disabled {
+  cursor: not-allowed !important;
+}
+
+select:disabled:hover {
+  cursor: not-allowed !important;
 }
 
 /* 3D Button Effects */
@@ -233,4 +253,82 @@ select.btn-3d option:hover {
   50% {
     box-shadow: 0 0 20px 5px rgba(22, 163, 74, 0.2);
   }
+}
+
+/* Pulsating glow effect for Get Started button */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7),
+                0 4px 8px rgba(0, 0, 0, 0.1),
+                0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(22, 163, 74, 0),
+                0 4px 8px rgba(0, 0, 0, 0.1),
+                0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shaking animation for button */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px) rotate(-0.5deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(2px) rotate(0.5deg);
+  }
+}
+
+.animate-pulseGlow-shake {
+  animation: pulseGlow 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite, shake 0.5s ease-in-out infinite;
+}
+
+/* Slide down animation for modal from top */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth tab transition animation */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.tab-content-enter {
+  animation: slideInRight 0.3s ease-in-out forwards;
+}
+
+.tab-content-exit {
+  animation: slideInLeft 0.3s ease-in-out forwards;
 }

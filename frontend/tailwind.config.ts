@@ -62,6 +62,20 @@ const config: Config = {
         md: '0.375rem',
         sm: '0.25rem',
       },
+      keyframes: {
+        pulseGlow: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)' },
+          '50%': { boxShadow: '0 0 20px 10px rgba(34, 197, 94, 0.3)' },
+        },
+        slideDown: {
+          '0%': { transform: 'translateY(-100%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      animation: {
+        pulseGlow: 'pulseGlow 1s ease-in-out',
+        slideDown: 'slideDown 0.5s ease-out',
+      },
     },
   },
   plugins: [],

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Smart Crop Advisor now includes a complete authentication system with:
+The FarmIQ now includes a complete authentication system with:
 - Email/Password signup and login with backend integration
 - Google OAuth authentication
 - JWT token-based session management
@@ -37,7 +37,7 @@ The Smart Crop Advisor now includes a complete authentication system with:
 The backend requires additional packages for authentication:
 
 ```bash
-cd smart-crop-advisor/backend
+cd farmiq/backend
 pip install -r requirements.txt
 ```
 
@@ -78,7 +78,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### 4. Start the Backend
 
 ```bash
-cd smart-crop-advisor/backend
+cd farmiq/backend
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -103,7 +103,7 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ### 2. Start the Frontend
 
 ```bash
-cd smart-crop-advisor/frontend
+cd farmiq/frontend
 npm install
 npm run dev
 ```

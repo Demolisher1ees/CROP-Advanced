@@ -100,7 +100,7 @@ Response:
 ## Database Location
 
 The SQLite database is stored in a Docker named volume:
-- Volume name: `smart-crop-advisor_backend-db`
+- Volume name: `farmiq_backend-db`
 - Mount point: `/app/db/crop_advisor.db` inside container
 
 To view the database:
@@ -132,7 +132,7 @@ docker exec -it crop-backend ls -la /app/db/
 
 4. **Restart all services**:
    ```bash
-   cd smart-crop-advisor
+   cd farmiq
    docker-compose down
    docker-compose up -d
    ```
@@ -141,13 +141,13 @@ docker exec -it crop-backend ls -la /app/db/
 
 ```bash
 # Stop services
-docker-compose -f smart-crop-advisor/docker-compose.yml down
+docker-compose -f farmiq/docker-compose.yml down
 
 # Remove the database volume
-docker volume rm smart-crop-advisor_backend-db
+docker volume rm farmiq_backend-db
 
 # Start services (will create fresh database)
-docker-compose -f smart-crop-advisor/docker-compose.yml up -d
+docker-compose -f farmiq/docker-compose.yml up -d
 ```
 
 ## Files Modified

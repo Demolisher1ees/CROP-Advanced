@@ -1,588 +1,389 @@
 "use client"
 
-import { useState, useEffect } from "react";
-import { Navbar } from "@/components/Navbar";
-import { Plus, Search, Droplets, Thermometer, AlertTriangle, CheckCircle, Clock, MapPin, X, Leaf, TrendingUp, Wind } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { clearAllCookies } from "@/lib/clearCookies"
+import {
+  Leaf, Sprout, CloudSun, BarChart3, MapPin, Thermometer,
+  Droplets, AlertTriangle, CheckCircle, Clock, Plus, TrendingUp,
+  Wind, Activity, ArrowRight, RefreshCw
+} from "lucide-react"
 
 interface Crop {
-  id: number;
-  crop_name: string;
-  location: string;
-  temperature?: number;
-  soil_moisture?: string;
-  status: string;
-  risk_level: string;
-  last_checked: string;
-  latitude?: number;
-  longitude?: number;
+  id: number
+  crop_name: string
+  location: string
+  temperature?: number
+  soil_moisture?: string
+  status: string
+  risk_level: string
+  last_checked: string
 }
 
-interface CropDetails extends Crop {
-  weather?: {
-    temperature: number;
-    humidity: number;
-    rain_forecast: string;
-  };
-  soil?: {
-    moisture: string;
-    ph: number;
-    nitrogen: number;
-    phosphorus: number;
-    potassium: number;
-  };
-  ai_recommendation?: {
-    water_needed: boolean;
-    fertilizer_needed: boolean;
-    shade_needed: boolean;
-    notes: string;
-  };
+interface WeatherInfo {
+  temperature: number
+  humidity: number
+  conditions: string
+  wind_speed: number
+  forecast: { day: string; temp: number; conditions: string }[]
 }
 
-const CropsPage = () => {
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [filteredCrops, setFilteredCrops] = useState<Crop[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedCrop, setSelectedCrop] = useState<CropDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [newCrop, setNewCrop] = useState({
-    crop_name: "",
-    location: "",
-    latitude: "",
-    longitude: "",
-  });
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+export default function CropsOverviewPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [isSigningOut, setIsSigningOut] = useState(false)
+  const [crops, setCrops] = useState<Crop[]>([])
+  const [weather, setWeather] = useState<WeatherInfo | null>(null)
+  const [isLoadingCrops, setIsLoadingCrops] = useState(true)
+  const [isLoadingWeather, setIsLoadingWeather] = useState(true)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   useEffect(() => {
-    fetchCrops();
-  }, []);
+    if (status === "unauthenticated") router.push("/login")
+  }, [status, router])
 
   useEffect(() => {
-    filterCrops();
-  }, [searchQuery, filterStatus, crops]);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchCrops()
+      fetchWeather()
+    }
+  }, [status])
 
   const fetchCrops = async () => {
     try {
-      setIsLoading(true);
-      const response = await fetch("http://localhost:8000/api/crops");
-      if (response.ok) {
-        const data = await response.json();
-        setCrops(data);
-      }
-    } catch (error) {
-      console.error("Error fetching crops:", error);
+      setIsLoadingCrops(true)
+      const res = await fetch(`${API_URL}/api/crops`)
+      if (res.ok) setCrops(await res.json())
+    } catch (e) {
+      console.error("Failed to fetch crops", e)
     } finally {
-      setIsLoading(false);
+      setIsLoadingCrops(false)
     }
-  };
+  }
 
-  const filterCrops = () => {
-    let filtered = crops;
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (crop) =>
-          crop.crop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          crop.location.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (filterStatus !== "all") {
-      filtered = filtered.filter((crop) => crop.risk_level.toLowerCase() === filterStatus);
-    }
-
-    setFilteredCrops(filtered);
-  };
-
-  const handleAddCrop = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchWeather = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/crops", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          crop_name: newCrop.crop_name,
-          location: newCrop.location,
-          latitude: newCrop.latitude ? parseFloat(newCrop.latitude) : null,
-          longitude: newCrop.longitude ? parseFloat(newCrop.longitude) : null,
-        }),
-      });
-
-      if (response.ok) {
-        setIsAddModalOpen(false);
-        setNewCrop({ crop_name: "", location: "", latitude: "", longitude: "" });
-        fetchCrops();
-      }
-    } catch (error) {
-      console.error("Error adding crop:", error);
+      setIsLoadingWeather(true)
+      const res = await fetch(`${API_URL}/api/weather/kolkata`)
+      if (res.ok) setWeather(await res.json())
+    } catch (e) {
+      console.error("Failed to fetch weather", e)
+    } finally {
+      setIsLoadingWeather(false)
     }
-  };
+  }
 
-  const handleViewDetails = async (cropId: number) => {
-    try {
-      const response = await fetch(`http://localhost:8000/api/crops/${cropId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedCrop(data);
-        setIsDetailsModalOpen(true);
-      }
-    } catch (error) {
-      console.error("Error fetching crop details:", error);
-    }
-  };
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    clearAllCookies()
+    await signOut({ callbackUrl: "/", redirect: true })
+  }
 
-  const getRiskColor = (riskLevel: string) => {
-    switch (riskLevel.toLowerCase()) {
-      case "low":
-      case "healthy":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "medium":
-      case "warning":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "high":
-      case "action required":
-        return "bg-red-100 text-red-700 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+  const getRiskColor = (risk: string) => {
+    switch (risk?.toLowerCase()) {
+      case "low": return "text-green-700 bg-green-100 border-green-200"
+      case "medium": return "text-yellow-700 bg-yellow-100 border-yellow-200"
+      case "high": return "text-red-700 bg-red-100 border-red-200"
+      default: return "text-gray-700 bg-gray-100 border-gray-200"
     }
-  };
+  }
 
-  const getRiskIcon = (riskLevel: string) => {
-    switch (riskLevel.toLowerCase()) {
-      case "low":
-      case "healthy":
-        return <CheckCircle size={20} />;
-      case "medium":
-      case "warning":
-        return <AlertTriangle size={20} />;
-      case "high":
-      case "action required":
-        return <AlertTriangle size={20} />;
-      default:
-        return <Clock size={20} />;
+  const getRiskIcon = (risk: string) => {
+    switch (risk?.toLowerCase()) {
+      case "low": return <CheckCircle size={14} />
+      case "medium": return <AlertTriangle size={14} />
+      case "high": return <AlertTriangle size={14} />
+      default: return <Clock size={14} />
     }
-  };
+  }
+
+  const stats = {
+    total: crops.length,
+    healthy: crops.filter(c => c.risk_level?.toLowerCase() === "low").length,
+    warning: crops.filter(c => c.risk_level?.toLowerCase() === "medium").length,
+    critical: crops.filter(c => c.risk_level?.toLowerCase() === "high").length,
+  }
+
+  const greeting = () => {
+    const h = currentTime.getHours()
+    if (h < 12) return "Good morning"
+    if (h < 17) return "Good afternoon"
+    return "Good evening"
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
+      </div>
+    )
+  }
+
+  if (!session) return null
+
+  const firstName = session.user?.name?.split(" ")[0] || "Farmer"
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
-      <Navbar />
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-r from-green-600 via-green-700 to-green-600 py-16">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-10 left-20 text-white">
-              <Leaf size={100} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-600">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C11.5 2 11 2.19 10.59 2.59L10 3.17L9.41 2.59C9 2.19 8.5 2 8 2C6.89 2 6 2.89 6 4C6 4.5 6.19 5 6.59 5.41L11.29 10.11C11.68 10.5 12.32 10.5 12.71 10.11L17.41 5.41C17.81 5 18 4.5 18 4C18 2.89 17.11 2 16 2C15.5 2 15 2.19 14.59 2.59L14 3.17L13.41 2.59C13 2.19 12.5 2 12 2M12 12C11.45 12 11 12.45 11 13V21C11 21.55 11.45 22 12 22C12.55 22 13 21.55 13 21V13C13 12.45 12.55 12 12 12Z"/>
+                </svg>
+              </div>
+              <span className="text-xl font-semibold text-gray-900">FarmIQ</span>
+            </Link>
+            <div className="hidden md:flex items-center gap-8">
+              <Link href="/" className="text-gray-700 hover:text-green-600 transition-colors font-medium">Home</Link>
+              <Link href="/crops" className="text-green-600 font-medium">Crops</Link>
+              <Link href="/about" className="text-gray-700 hover:text-green-600 transition-colors font-medium">About</Link>
+              <Link href="/contact" className="text-gray-700 hover:text-green-600 transition-colors font-medium">Contact</Link>
             </div>
-            <div className="absolute bottom-10 right-20 text-white">
-              <TrendingUp size={120} />
+            <div className="flex items-center gap-4">
+              {session.user?.image && (
+                <img src={session.user.image} alt={session.user.name || ""} className="w-8 h-8 rounded-full ring-2 ring-green-100" />
+              )}
+              <span className="text-sm font-medium text-gray-900">{session.user?.name}</span>
+              <button
+                onClick={handleSignOut}
+                disabled={isSigningOut}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSigningOut ? (
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                )}
+                <span>{isSigningOut ? "Signing out..." : "Sign Out"}</span>
+              </button>
             </div>
-          </div>
-          
-          <div className="container relative mx-auto max-w-7xl px-4">
-            <div className="text-center">
-              <h1 className="text-4xl font-extrabold text-white mb-3 md:text-5xl">
-                My Crops
-              </h1>
-              <p className="text-xl text-green-50">
-                Monitor crop health, soil, and AI recommendations in real time
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Search and Filter Section */}
-        <section className="py-8 bg-white border-b border-green-100">
-          <div className="container mx-auto max-w-7xl px-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search by crop name or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterStatus("all")}
-                  className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                    filterStatus === "all"
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilterStatus("healthy")}
-                  className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                    filterStatus === "healthy"
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Healthy
-                </button>
-                <button
-                  onClick={() => setFilterStatus("warning")}
-                  className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                    filterStatus === "warning"
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Warning
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Crops Grid */}
-        <section className="py-12">
-          <div className="container mx-auto max-w-7xl px-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : filteredCrops.length === 0 ? (
-              <div className="text-center py-20">
-                <Leaf className="mx-auto mb-4 text-gray-400" size={64} />
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">No crops found</h3>
-                <p className="text-gray-600 mb-6">Start by adding your first crop to monitor</p>
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="gap-2 bg-green-600 hover:bg-green-700"
-                >
-                  <Plus size={20} />
-                  Add New Crop
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredCrops.map((crop) => (
-                  <Card
-                    key={crop.id}
-                    className="bg-white border-2 border-green-100 shadow-lg rounded-2xl hover:shadow-xl hover:border-green-300 transition-all duration-300 overflow-hidden group"
-                  >
-                    <div className="h-2 bg-gradient-to-r from-green-500 to-green-600"></div>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-xl text-gray-900 mb-2">{crop.crop_name}</CardTitle>
-                          <div className="flex items-center gap-2 text-gray-600 text-sm">
-                            <MapPin size={16} />
-                            <span>{crop.location}</span>
-                          </div>
-                        </div>
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold border-2 ${getRiskColor(crop.risk_level)}`}>
-                          {getRiskIcon(crop.risk_level)}
-                          <span>{crop.risk_level}</span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2">
-                          <div className="p-2 bg-orange-100 rounded-lg">
-                            <Thermometer className="text-orange-600" size={20} />
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Temperature</p>
-                            <p className="font-semibold text-gray-900">{crop.temperature || "N/A"}°C</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Droplets className="text-blue-600" size={20} />
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Soil Moisture</p>
-                            <p className="font-semibold text-gray-900">{crop.soil_moisture || "N/A"}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-3 bg-green-50 rounded-lg border border-green-100">
-                        <p className="text-sm font-medium text-green-900 mb-1">AI Recommendation</p>
-                        <p className="text-sm text-green-700">{crop.status}</p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Clock size={14} />
-                          <span>{new Date(crop.last_checked).toLocaleString()}</span>
-                        </div>
-                      </div>
-
-                      <Button
-                        onClick={() => handleViewDetails(crop.id)}
-                        className="w-full bg-green-600 hover:bg-green-700 transition-all duration-200"
-                      >
-                        View Details
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
-
-      {/* Floating Add Button - Always visible */}
-      <button
-        onClick={() => setIsAddModalOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 z-40 flex items-center justify-center group hover:scale-110"
-        title="Add New Crop"
-      >
-        <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-      </button>
-
-      {/* Add Crop Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Add New Crop</h2>
-                <button
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-            <form onSubmit={handleAddCrop} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Crop Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newCrop.crop_name}
-                  onChange={(e) => setNewCrop({ ...newCrop, crop_name: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
-                  placeholder="e.g., Rice, Wheat, Corn"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newCrop.location}
-                  onChange={(e) => setNewCrop({ ...newCrop, location: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
-                  placeholder="e.g., Kolkata, West Bengal"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Latitude (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={newCrop.latitude}
-                    onChange={(e) => setNewCrop({ ...newCrop, latitude: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
-                    placeholder="22.5726"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Longitude (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={newCrop.longitude}
-                    onChange={(e) => setNewCrop({ ...newCrop, longitude: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-green-100 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900"
-                    placeholder="88.3639"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  variant="outline"
-                  className="flex-1 text-gray-900 border-gray-300 hover:bg-gray-100"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
-                  Add Crop
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
-      )}
+      </nav>
 
-      {/* Details Modal */}
-      {isDetailsModalOpen && selectedCrop && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">{selectedCrop.crop_name}</h2>
-                  <p className="text-green-100 flex items-center gap-2 mt-1">
-                    <MapPin size={16} />
-                    {selectedCrop.location}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsDetailsModalOpen(false)}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X size={24} />
-                </button>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{greeting()}, {firstName}! 👋</h1>
+            <p className="text-gray-500 text-sm mt-1">
+              {currentTime.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/">
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+                <Sprout size={16} className="text-green-600" /> Get Recommendations
+              </button>
+            </Link>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium text-white transition-all shadow-sm"
+            >
+              <Plus size={16} /> Add Crop
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Crops", value: stats.total, icon: Sprout, color: "text-green-600", bg: "bg-green-50" },
+            { label: "Healthy", value: stats.healthy, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: "Needs Attention", value: stats.warning, icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-50" },
+            { label: "Critical", value: stats.critical, icon: Activity, color: "text-red-600", bg: "bg-red-50" },
+          ].map(({ label, value, icon: Icon, color, bg }) => (
+            <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+              <div className={`${bg} p-3 rounded-xl`}><Icon className={`${color} w-6 h-6`} /></div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{isLoadingCrops ? "—" : value}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{label}</p>
               </div>
             </div>
-            <div className="p-6 space-y-6">
-              {/* Weather Section */}
-              {selectedCrop.weather && (
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Wind className="text-blue-600" size={24} />
-                    Weather Conditions
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Card className="border-2 border-blue-100">
-                      <CardContent className="p-4 text-center">
-                        <Thermometer className="mx-auto mb-2 text-orange-600" size={32} />
-                        <p className="text-sm text-gray-600">Temperature</p>
-                        <p className="text-2xl font-bold text-gray-900">{selectedCrop.weather.temperature}°C</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-2 border-blue-100">
-                      <CardContent className="p-4 text-center">
-                        <Droplets className="mx-auto mb-2 text-blue-600" size={32} />
-                        <p className="text-sm text-gray-600">Humidity</p>
-                        <p className="text-2xl font-bold text-gray-900">{selectedCrop.weather.humidity}%</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-2 border-blue-100">
-                      <CardContent className="p-4 text-center">
-                        <Wind className="mx-auto mb-2 text-gray-600" size={32} />
-                        <p className="text-sm text-gray-600">Rain Forecast</p>
-                        <p className="text-lg font-bold text-gray-900">{selectedCrop.weather.rain_forecast}</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
+          ))}
+        </div>
 
-              {/* Soil Section */}
-              {selectedCrop.soil && (
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Leaf className="text-green-600" size={24} />
-                    Soil Analysis
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <Card className="border-2 border-green-100">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-1">Moisture</p>
-                        <p className="text-xl font-bold text-gray-900">{selectedCrop.soil.moisture}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-2 border-green-100">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-1">pH Level</p>
-                        <p className="text-xl font-bold text-gray-900">{selectedCrop.soil.ph}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-2 border-green-100">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-1">Nitrogen (N)</p>
-                        <p className="text-xl font-bold text-gray-900">{selectedCrop.soil.nitrogen} kg/ha</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-2 border-green-100">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-1">Phosphorus (P)</p>
-                        <p className="text-xl font-bold text-gray-900">{selectedCrop.soil.phosphorus} kg/ha</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-2 border-green-100">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-1">Potassium (K)</p>
-                        <p className="text-xl font-bold text-gray-900">{selectedCrop.soil.potassium} kg/ha</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              {/* AI Recommendations */}
-              {selectedCrop.ai_recommendation && (
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <TrendingUp className="text-purple-600" size={24} />
-                    AI Recommendations
-                  </h3>
-                  <Card className="border-2 border-purple-100 bg-purple-50">
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${selectedCrop.ai_recommendation.water_needed ? "bg-blue-100" : "bg-gray-100"}`}>
-                          <Droplets className={selectedCrop.ai_recommendation.water_needed ? "text-blue-600" : "text-gray-400"} size={24} />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">Water Needed</p>
-                          <p className="text-sm text-gray-600">{selectedCrop.ai_recommendation.water_needed ? "Yes - Irrigation recommended" : "No - Adequate moisture"}</p>
-                        </div>
+          {/* Crops List */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Sprout size={18} className="text-green-600" /> My Crops
+              </h2>
+              <button onClick={() => setIsAddModalOpen(true)} className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
+                Add new <ArrowRight size={14} />
+              </button>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {isLoadingCrops ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+                </div>
+              ) : crops.length === 0 ? (
+                <div className="text-center py-16 px-6">
+                  <Sprout className="mx-auto mb-3 text-gray-300" size={48} />
+                  <p className="text-gray-500 font-medium">No crops added yet</p>
+                  <p className="text-gray-400 text-sm mt-1 mb-4">Start monitoring your crops by adding them</p>
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    <Plus size={16} /> Add Your First Crop
+                  </button>
+                </div>
+              ) : (
+                crops.slice(0, 6).map((crop) => (
+                  <div key={crop.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                        <Leaf size={16} className="text-green-600" />
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${selectedCrop.ai_recommendation.fertilizer_needed ? "bg-green-100" : "bg-gray-100"}`}>
-                          <Leaf className={selectedCrop.ai_recommendation.fertilizer_needed ? "text-green-600" : "text-gray-400"} size={24} />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">Fertilizer Needed</p>
-                          <p className="text-sm text-gray-600">{selectedCrop.ai_recommendation.fertilizer_needed ? "Yes - Apply NPK fertilizer" : "No - Nutrient levels adequate"}</p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{crop.crop_name}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                          <MapPin size={11} /> {crop.location}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${selectedCrop.ai_recommendation.shade_needed ? "bg-yellow-100" : "bg-gray-100"}`}>
-                          <AlertTriangle className={selectedCrop.ai_recommendation.shade_needed ? "text-yellow-600" : "text-gray-400"} size={24} />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">Shade Needed</p>
-                          <p className="text-sm text-gray-600">{selectedCrop.ai_recommendation.shade_needed ? "Yes - Protect from heat" : "No - Temperature optimal"}</p>
-                        </div>
-                      </div>
-                      {selectedCrop.ai_recommendation.notes && (
-                        <div className="mt-4 p-4 bg-white rounded-lg border border-purple-200">
-                          <p className="text-sm font-medium text-gray-900 mb-2">Additional Notes:</p>
-                          <p className="text-sm text-gray-700">{selectedCrop.ai_recommendation.notes}</p>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0 ml-4">
+                      {crop.temperature && (
+                        <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500">
+                          <Thermometer size={13} className="text-orange-500" />{crop.temperature}°C
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
-                </div>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${getRiskColor(crop.risk_level)}`}>
+                        {getRiskIcon(crop.risk_level)} {crop.risk_level}
+                      </span>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
-export default CropsPage;
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Weather Card */}
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm text-white p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold flex items-center gap-2"><CloudSun size={18} /> Weather</h2>
+                <button onClick={fetchWeather} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"><RefreshCw size={14} /></button>
+              </div>
+              {isLoadingWeather ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white/60" />
+                </div>
+              ) : weather ? (
+                <>
+                  <div className="mb-4">
+                    <p className="text-4xl font-bold">{weather.temperature}°C</p>
+                    <p className="text-blue-100 text-sm mt-1">{weather.conditions}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-white/15 rounded-lg p-3">
+                      <Droplets size={16} className="mb-1 text-blue-100" />
+                      <p className="text-xs text-blue-100">Humidity</p>
+                      <p className="font-semibold">{weather.humidity}%</p>
+                    </div>
+                    <div className="bg-white/15 rounded-lg p-3">
+                      <Wind size={16} className="mb-1 text-blue-100" />
+                      <p className="text-xs text-blue-100">Wind</p>
+                      <p className="font-semibold">{weather.wind_speed} km/h</p>
+                    </div>
+                  </div>
+                  {weather.forecast && (
+                    <div className="space-y-2">
+                      {weather.forecast.map((f) => (
+                        <div key={f.day} className="flex items-center justify-between text-sm bg-white/10 rounded-lg px-3 py-2">
+                          <span className="text-blue-100">{f.day}</span>
+                          <span className="font-medium">{f.temp}°C</span>
+                          <span className="text-blue-200 text-xs">{f.conditions}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-blue-100 text-sm py-4 text-center">Weather data unavailable</p>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <TrendingUp size={18} className="text-green-600" /> Quick Actions
+              </h2>
+              <div className="space-y-2">
+                {[
+                  { label: "Get Crop Recommendations", href: "/", icon: Sprout, color: "text-green-600 bg-green-50" },
+                  { label: "Manage My Crops", href: "/crops", icon: Leaf, color: "text-emerald-600 bg-emerald-50" },
+                  { label: "About FarmIQ", href: "/about", icon: BarChart3, color: "text-blue-600 bg-blue-50" },
+                  { label: "Contact Support", href: "/contact", icon: Activity, color: "text-purple-600 bg-purple-50" },
+                ].map(({ label, href, icon: Icon, color }) => (
+                  <Link key={label} href={href}>
+                    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
+                      <div className={`p-2 rounded-lg ${color}`}><Icon size={16} /></div>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
+                      <ArrowRight size={14} className="ml-auto text-gray-400 group-hover:text-gray-600" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Farm Health Overview */}
+        {crops.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Activity size={18} className="text-green-600" /> Crop Status Overview
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                <span>Overall Farm Health</span>
+                <span className="font-medium text-gray-900">
+                  {Math.round((stats.healthy / stats.total) * 100)}% Healthy
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex">
+                {stats.healthy > 0 && <div className="bg-green-500 h-3 transition-all" style={{ width: `${(stats.healthy / stats.total) * 100}%` }} />}
+                {stats.warning > 0 && <div className="bg-yellow-400 h-3 transition-all" style={{ width: `${(stats.warning / stats.total) * 100}%` }} />}
+                {stats.critical > 0 && <div className="bg-red-500 h-3 transition-all" style={{ width: `${(stats.critical / stats.total) * 100}%` }} />}
+              </div>
+              <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Healthy ({stats.healthy})</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Warning ({stats.warning})</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Critical ({stats.critical})</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}

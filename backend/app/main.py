@@ -1,17 +1,37 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.routes import weather, soil, predict, auth, contact, crops
 from app.database.db import engine, Base
+
+# rate limiting
+from slowapi.errors import RateLimitExceeded
+from starlette.requests import Request
+from slowapi.middleware import SlowAPIMiddleware
+
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+# initialize rate limiter
+def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Please try again later."},
+    )
+
 app = FastAPI(
-    title="Smart Crop Advisor API",
+    title="FarmIQ API",
     description="AI-powered crop recommendation system",
     version="1.0.0"
 )
+
+# attach limiter
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware
 app.add_middleware(
@@ -34,7 +54,7 @@ app.include_router(crops.router, prefix="/api", tags=["Crops"])
 @app.get("/")
 async def root():
     return {
-        "message": "Smart Crop Advisor API",
+        "message": "FarmIQ API",
         "version": "1.0.0",
         "docs": "/docs"
     }

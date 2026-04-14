@@ -1,5 +1,6 @@
-import { getServerSession } from "next-auth"
+import getServerSession from "next-auth"
 
 export async function getSession() {
-  return await getServerSession()
+  // not used in current codebase, returns null placeholder
+  return null
 }

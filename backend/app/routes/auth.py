@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.security import verify_password, get_password_hash, create_access_token
-from datetime import timedelta
+from datetime import timedelta, datetime
+import secrets
+from app.models.password_reset import PasswordReset
+from app.core.limiter import limiter
+from app.services.email_service import send_email
+import os
+from app.core.logger import logger
 
 router = APIRouter()
 
@@ -22,22 +28,41 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     
     # Create new user
     hashed_password = get_password_hash(user_data.password)
+    # generate email verification token
+    verification_token = secrets.token_urlsafe(32)
     new_user = User(
         email=user_data.email,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        verification_token=verification_token,
+        is_verified=False
     )
     
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
+    # Send verification email
+    if os.getenv("SMTP_HOST"):
+        try:
+            verification_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3001')}/verify?token={verification_token}"
+            send_email(
+                new_user.email,
+                "Verify Your Account",
+                f"Click here to verify: {verification_link}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to send verification email to {new_user.email}: {e}")
+    else:
+        logger.info(f"Verification token for {new_user.email}: {new_user.verification_token}")
+    
     return new_user
 
 
 @router.post("/login", response_model=Token)
-async def login(user_data: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token"""
     # Find user by email
     user = db.query(User).filter(User.email == user_data.email).first()
@@ -62,6 +87,12 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
+    # Check email verification
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email address not verified"
+        )
     
     # Create access token with user info
     access_token_expires = timedelta(minutes=30)
@@ -79,6 +110,61 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "name": f"{user.first_name} {user.last_name}"
     }
+
+
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify user email address using token"""
+    user = db.query(User).filter(User.verification_token == token).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+    user.is_verified = True
+    user.verification_token = None
+    db.commit()
+    return {"message": "Email verified successfully"}
+
+
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Initiate password reset request"""
+    user = db.query(User).filter(User.email == request.email).first()
+    if user:
+        token = secrets.token_urlsafe(48)
+        expires = datetime.utcnow() + timedelta(minutes=15)
+        reset = PasswordReset(user_id=user.id, token=token, expires_at=expires)
+        db.add(reset)
+        db.commit()
+        
+        # Send reset email
+        if os.getenv("SMTP_HOST"):
+            try:
+                reset_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3001')}/reset-password?token={token}"
+                send_email(
+                    user.email,
+                    "Reset Your Password",
+                    f"Click here to reset your password: {reset_link}"
+                )
+            except Exception as e:
+                logger.error(f"Failed to send reset email to {user.email}: {e}")
+        else:
+            logger.info(f"Password reset token for {user.email}: {token}")
+    # Always return success to avoid enumeration
+    return {"message": "If the email is registered, instructions have been sent."}
+
+
+@router.post("/reset-password")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Complete password reset using token"""
+    record = db.query(PasswordReset).filter(PasswordReset.token == request.token).first()
+    if not record or record.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+    user.hashed_password = get_password_hash(request.new_password)
+    db.delete(record)
+    db.commit()
+    return {"message": "Password has been reset successfully."}
 
 
 @router.get("/me", response_model=UserResponse)
