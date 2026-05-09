@@ -1,33 +1,22 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { useState } from "react"
 import { usePathname } from "next/navigation"
-import { clearAllCookies } from "@/lib/clearCookies"
 import { useAuthModalContext } from "@/components/AuthModalProvider"
 import { useLanguage } from "@/components/LanguageProvider"
 
 export function Navbar() {
   const { data: session, status } = useSession()
   const { isNavGlow, setIsAuthModalOpen } = useAuthModalContext()
-  const [isSigningOut, setIsSigningOut] = useState(false)
   const pathname = usePathname()
   const { t } = useLanguage()
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true)
-    clearAllCookies()
-    // Force light mode on sign out
-    localStorage.setItem("farmiq-theme", "light")
-    document.documentElement.classList.remove("dark")
-    await signOut({ callbackUrl: "/", redirect: true })
-  }
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-600">
               <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -37,6 +26,7 @@ export function Navbar() {
             <span className="text-xl font-semibold text-gray-900 dark:text-white">FarmIQ</span>
           </Link>
 
+          {/* Nav links */}
           <div className="hidden md:flex items-center gap-8">
             <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium">
               {t("nav.home")}
@@ -50,7 +40,6 @@ export function Navbar() {
                 {t("nav.crops")}
               </div>
             )}
-
             <Link href="/about" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium">
               {t("nav.about")}
             </Link>
@@ -59,15 +48,16 @@ export function Navbar() {
             </Link>
           </div>
 
+          {/* Right side — auth area */}
           <div className="hidden md:flex items-center gap-4">
             {status === "loading" ? (
-              <div className="w-8 h-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
+              <div className="w-8 h-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
             ) : session ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {pathname === "/profile" && (
-                  <Link 
+                  <Link
                     href="/"
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors pr-2 border-r border-gray-200 dark:border-gray-800"
+                    className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors pr-3 border-r border-gray-200 dark:border-gray-700"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -75,6 +65,7 @@ export function Navbar() {
                     {t("nav.back_to_home")}
                   </Link>
                 )}
+                {/* Avatar + name → click to go to profile */}
                 <Link
                   href="/profile"
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity group"
@@ -93,25 +84,10 @@ export function Navbar() {
                       </span>
                     </div>
                   )}
-                  <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">{session.user?.name}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                    {session.user?.name}
+                  </span>
                 </Link>
-                <button
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isSigningOut ? (
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                  )}
-                  <span className="text-sm">{isSigningOut ? t("nav.signing_out") : t("nav.sign_out")}</span>
-                </button>
               </div>
             ) : (
               <button
@@ -123,6 +99,7 @@ export function Navbar() {
             )}
           </div>
 
+          {/* Mobile hamburger */}
           <div className="md:hidden">
             <button className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

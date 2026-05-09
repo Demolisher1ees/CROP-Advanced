@@ -259,14 +259,14 @@ export default function CropsOverviewPage() {
   const pestAlerts = useMemo(() => {
     if (!weather) return []
     const a: { title: string; level: "high" | "medium"; icon: string; desc: string; action: string }[] = []
-    if (weather.humidity > 80 && weather.temperature > 20)
+    if (weather.humidity > 70 && weather.temperature > 20)
       a.push({ title: "Fungal Disease Risk", level: "high", icon: "🍄", desc: `High humidity (${weather.humidity}%) + warm temp (${weather.temperature}°C) — ideal for blight, mildew, and rust.`, action: "Apply preventive fungicide. Improve air circulation between plants." })
-    if (weather.humidity < 35 && weather.temperature > 32)
+    if (weather.humidity < 45 && weather.temperature > 30)
       a.push({ title: "Spider Mite Risk", level: "high", icon: "🕷️", desc: `Hot (${weather.temperature}°C) + dry (${weather.humidity}%) conditions favour mite infestations.`, action: "Spray neem oil or miticide. Increase irrigation frequency." })
     if (weather.temperature > 38)
       a.push({ title: "Extreme Heat Stress", level: "high", icon: "🌡️", desc: `Temperature ${weather.temperature}°C exceeds safe limits for most crops.`, action: "Mulch soil surface. Irrigate in early morning or evening. Use shade nets." })
     if (weather.humidity > 75 && weather.temperature < 18)
-      a.push({ title: "Bacterial Leaf Spot Risk", level: "medium", icon: "🦠", desc: `Cool, moist conditions can promote bacterial infections.`, action: "Avoid overhead watering. Ensure good field drainage. Apply copper-based spray." })
+      a.push({ title: "Bacterial Leaf Spot Risk", level: "medium", icon: "🦠", desc: `Cool (${weather.temperature}°C), moist (${weather.humidity}%) conditions promote bacterial infections.`, action: "Avoid overhead watering. Ensure good field drainage. Apply copper-based spray." })
     if (weather.wind_speed > 50)
       a.push({ title: "High Wind — Physical Damage", level: "medium", icon: "💨", desc: `Wind speed ${weather.wind_speed} km/h may lodge or snap plants.`, action: "Stake tall crops. Delay spraying operations. Check for lodging." })
     return a
@@ -317,7 +317,7 @@ export default function CropsOverviewPage() {
   const firstName = session.user?.name?.split(" ")[0] || "Farmer"
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] transition-colors duration-300">
+    <div className="relative min-h-[calc(100vh-4rem)] transition-colors duration-300 overflow-x-hidden">
       {/* Fixed Background Layer */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat bg-gray-50 dark:bg-gray-950 z-[-2]"
@@ -354,14 +354,13 @@ export default function CropsOverviewPage() {
 
           {/* ── Pest/Disease Alert Banner ── */}
           {pestAlerts.length > 0 && (
-            <div 
-              className={`transition-all duration-500 ease-in-out overflow-hidden origin-right ${
-                isPestAlertClosed ? "max-h-0 opacity-0 translate-x-full !m-0 !p-0 border-0" : "max-h-[800px] opacity-100 translate-x-0"
+            <div
+              className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                isPestAlertClosed ? "max-h-0 opacity-0 !m-0" : "max-h-[800px] opacity-100"
               }`}
-              style={isPestAlertClosed ? { margin: 0, padding: 0, border: 0 } : {}}
             >
               <div className="rounded-xl overflow-hidden border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/40 relative group">
-                <button 
+                <button
                   onClick={() => setIsPestAlertClosed(true)}
                   className="absolute top-3 right-3 p-1 rounded-full bg-orange-200/50 dark:bg-orange-800/50 text-orange-800 dark:text-orange-200 opacity-0 group-hover:opacity-100 transition-all hover:bg-orange-300/50 dark:hover:bg-orange-700/50 z-10"
                   aria-label="Close Alert"
@@ -371,10 +370,10 @@ export default function CropsOverviewPage() {
                 <div className="px-5 py-3 bg-orange-100 dark:bg-orange-900/40 flex items-center gap-2 pr-10">
                   <Bug size={16} className="text-orange-700 dark:text-orange-400" />
                   <span className="font-semibold text-orange-800 dark:text-orange-300 text-sm">
-                    {pestAlerts.length} Pest & Disease Alert{pestAlerts.length > 1 ? "s" : ""} — Based on current weather conditions
+                    {pestAlerts.length} Pest &amp; Disease Alert{pestAlerts.length > 1 ? "s" : ""} — Based on current weather conditions
                   </span>
                 </div>
-                <div className="divide-y divide-orange-100 dark:divide-orange-900">
+                <div>
                   {pestAlerts.map((alert, i) => (
                     <div key={i} className="px-5 py-3 flex items-start gap-3">
                       <span className="text-xl mt-0.5">{alert.icon}</span>

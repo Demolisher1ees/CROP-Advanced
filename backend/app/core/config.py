@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     
     # Authentication
     AUTH_SECRET: Optional[str] = None
+
+    # Frontend URL (used in email links for password reset / verification)
+    FRONTEND_URL: str = "http://localhost:3001"
     
     # Application
     # use environment variable so production won't run in debug mode
