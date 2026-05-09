@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useAuthModalContext } from "@/components/AuthModalProvider";
-import { Navbar } from "@/components/Navbar";
 import { Mail, MapPin, Send, CheckCircle2, AlertCircle, ChevronDown, Leaf, Sprout, LayoutDashboard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const ContactPage = () => {
   const { data: session } = useSession();
   const { setIsAuthModalOpen } = useAuthModalContext();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: session?.user?.name || "",
     message: "",
@@ -30,12 +31,12 @@ const ContactPage = () => {
     let isValid = true;
 
     if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = t("contact.name_required");
       isValid = false;
     }
 
     if (!formData.message.trim()) {
-      newErrors.message = "Message is required";
+      newErrors.message = t("contact.message_required");
       isValid = false;
     }
 
@@ -80,10 +81,10 @@ const ContactPage = () => {
         setFormData({ name: "", message: "" });
         setTimeout(() => setSubmitSuccess(false), 5000);
       } else {
-        setSubmitError("Failed to send message. Please try again.");
+        setSubmitError(t("contact.error_sending"));
       }
     } catch (error) {
-      setSubmitError("Network error. Please check your connection.");
+      setSubmitError(t("contact.error_network"));
     } finally {
       setIsSubmitting(false);
     }
@@ -117,11 +118,15 @@ const ContactPage = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-      <main className="flex-grow">
+    <div className="relative min-h-[calc(100vh-4rem)] flex flex-col">
+      {/* Fixed Background Layer */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat z-[-2]"
+        style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=80')" }}
+      />
+      <main className="relative flex-grow z-10">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-r from-green-100 via-green-50 to-white py-24 md:py-32">
+        <section className="relative overflow-hidden py-24 md:py-32 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
           {/* Decorative Background Elements */}
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-10 left-10 w-64 h-64 bg-green-200 rounded-full blur-3xl"></div>
@@ -137,13 +142,13 @@ const ContactPage = () => {
           <div className="container relative mx-auto max-w-6xl px-4 text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-white shadow-md">
               <Mail size={20} />
-              <span className="text-sm font-semibold tracking-wide uppercase">Get In Touch</span>
+              <span className="text-sm font-semibold tracking-wide uppercase">{t("contact.get_in_touch_badge")}</span>
             </div>
             <h1 className="mb-6 text-5xl font-extrabold tracking-tight text-gray-900 md:text-6xl">
-              Contact Us
+              {t("contact.title")}
             </h1>
             <p className="mx-auto max-w-2xl text-xl text-gray-600">
-              Have questions or need help with your crops? Reach out to our team and we&apos;ll get back to you as soon as possible.
+              {t("contact.subtitle")}
             </p>
           </div>
         </section>
@@ -152,7 +157,7 @@ const ContactPage = () => {
         <div className="relative h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent"></div>
 
         {/* Main Contact Section */}
-        <section className="relative py-20 bg-gradient-to-b from-white to-green-50">
+        <section className="relative py-20 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-y border-white/20">
           {/* Background Accent */}
           <div className="absolute top-20 right-10 w-72 h-72 bg-green-100 rounded-full blur-3xl opacity-30"></div>
           
@@ -169,16 +174,16 @@ const ContactPage = () => {
                       <div className="p-2 bg-green-100 rounded-lg">
                         <Send className="text-green-600" size={24} />
                       </div>
-                      <CardTitle className="text-2xl text-gray-900">Send us a Message</CardTitle>
+                      <CardTitle className="text-2xl text-gray-900">{t("contact.send_message_title")}</CardTitle>
                     </div>
-                    <p className="text-gray-600">Fill out the form below and we&apos;ll respond within 24 hours</p>
+                    <p className="text-gray-600">{t("contact.form_subtitle")}</p>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
                       {/* Name Field */}
                       <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                          Name
+                          {t("contact.name_label")}
                         </label>
                         <input
                           type="text"
@@ -189,7 +194,7 @@ const ContactPage = () => {
                           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-gray-900 ${
                             errors.name ? "border-red-500" : "border-gray-300"
                           }`}
-                          placeholder="Your name"
+                          placeholder={t("contact.name_placeholder")}
                           style={{
                             '--tw-placeholder-opacity': '1',
                           } as React.CSSProperties}
@@ -205,7 +210,7 @@ const ContactPage = () => {
                       {/* Message Field */}
                       <div>
                         <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                          Message
+                          {t("contact.message_label")}
                         </label>
                         <textarea
                           id="message"
@@ -216,7 +221,7 @@ const ContactPage = () => {
                           className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none text-gray-900 ${
                             errors.message ? "border-red-500" : "border-gray-300"
                           }`}
-                          placeholder="Tell us how we can help you..."
+                          placeholder={t("contact.message_placeholder")}
                           style={{
                             '--tw-placeholder-opacity': '1',
                           } as React.CSSProperties}
@@ -242,17 +247,17 @@ const ContactPage = () => {
                         {isSubmitting ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Sending...
+                            {t("contact.sending")}
                           </>
                         ) : !session ? (
                           <>
                             <Send size={18} />
-                            Sign In to Send
+                            {t("contact.sign_in_to_send")}
                           </>
                         ) : (
                           <>
                             <Send size={18} />
-                            Send Message
+                            {t("contact.send_message")}
                           </>
                         )}
                       </Button>
@@ -261,7 +266,7 @@ const ContactPage = () => {
                       {submitSuccess && (
                         <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-800">
                           <CheckCircle2 size={20} />
-                          <span>Message sent successfully! We&apos;ll get back to you soon.</span>
+                          <span>{t("contact.success_message")}</span>
                         </div>
                       )}
 
@@ -280,8 +285,8 @@ const ContactPage = () => {
               {/* Contact Info */}
               <div className="space-y-6">
                 <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-3">Get in Touch</h2>
-                  <p className="text-gray-600">Choose your preferred way to reach us</p>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-3">{t("contact.contact_info_title")}</h2>
+                  <p className="text-gray-600">{t("contact.contact_info_subtitle")}</p>
                 </div>
                 
                 <Card className="bg-white border-2 border-green-100 shadow-lg rounded-xl hover:shadow-xl hover:border-green-200 transition-all duration-300 group">
@@ -290,11 +295,11 @@ const ContactPage = () => {
                       <Mail size={28} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-2 text-lg">Email</h3>
+                      <h3 className="font-bold text-gray-900 mb-2 text-lg">{t("contact.email_label")}</h3>
                       <a href="mailto:noreplycropstation@gmail.com" className="text-green-600 hover:text-green-700 font-medium">
                         noreplycropstation@gmail.com
                       </a>
-                      <p className="text-sm text-gray-500 mt-1">We&apos;ll respond within 24 hours</p>
+                      <p className="text-sm text-gray-500 mt-1">{t("contact.email_response_time")}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -305,9 +310,9 @@ const ContactPage = () => {
                       <MapPin size={28} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-2 text-lg">Location</h3>
+                      <h3 className="font-bold text-gray-900 mb-2 text-lg">{t("contact.location_label")}</h3>
                       <p className="text-gray-700 font-medium">Kolkata, India</p>
-                      <p className="text-sm text-gray-500 mt-1">Visit us at our office</p>
+                      <p className="text-sm text-gray-500 mt-1">{t("contact.office_note")}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -318,10 +323,8 @@ const ContactPage = () => {
                     <div className="flex items-start gap-3 mb-3">
                       <CheckCircle2 size={24} className="flex-shrink-0 mt-1" />
                       <div>
-                        <h3 className="font-bold text-lg mb-2">Quick Response Guaranteed</h3>
-                        <p className="text-green-50 text-sm leading-relaxed">
-                          Our dedicated support team is committed to helping farmers succeed. Get expert advice on crop management, soil health, and agricultural best practices.
-                        </p>
+                        <h3 className="font-bold text-lg mb-2">{t("contact.quick_response")}</h3>
+                        <p className="text-green-50 text-sm leading-relaxed">{t("contact.quick_response_desc")}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -335,7 +338,7 @@ const ContactPage = () => {
         <div className="relative h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent"></div>
 
         {/* FAQ Section */}
-        <section className="relative py-20 bg-gradient-to-b from-green-50 to-white overflow-hidden">
+        <section className="relative py-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md overflow-hidden">
           {/* Background Decoration */}
           <div className="absolute top-10 left-10 w-64 h-64 bg-green-200 rounded-full blur-3xl opacity-20"></div>
           
@@ -343,10 +346,10 @@ const ContactPage = () => {
             <div className="text-center mb-12">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-green-700">
                 <AlertCircle size={20} />
-                <span className="text-sm font-semibold tracking-wide uppercase">FAQ</span>
+                <span className="text-sm font-semibold tracking-wide uppercase">{t("contact.faq_badge")}</span>
               </div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
-              <p className="text-lg text-gray-600">Find answers to common questions about our service</p>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">{t("contact.faq_title")}</h2>
+              <p className="text-lg text-gray-600">{t("contact.faq_subtitle")}</p>
             </div>
 
             <div className="space-y-4">
@@ -380,7 +383,7 @@ const ContactPage = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="relative bg-gradient-to-r from-green-600 via-green-700 to-green-600 py-20 overflow-hidden">
+        <section className="relative py-20 overflow-hidden bg-green-900/80 backdrop-blur-md border-t border-white/10">
           {/* Decorative Elements */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-20 text-white">
@@ -394,20 +397,20 @@ const ContactPage = () => {
           <div className="container relative mx-auto max-w-4xl px-4 text-center">
             <Leaf className="mx-auto mb-6 text-white" size={48} />
             <h2 className="mb-4 text-4xl font-extrabold text-white md:text-5xl">
-              Start Optimizing Your Crop Health Today
+              {t("contact.cta_title")}
             </h2>
             <p className="mx-auto mb-10 max-w-2xl text-xl text-green-50">
-              Join thousands of farmers using AI-powered insights to grow smarter, healthier crops with data-driven recommendations.
+              {t("contact.cta_desc")}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link href="/crops">
                 <Button size="lg" className="gap-2 px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 text-green-700 border-2 border-white bg-white hover:bg-green-50">
-                  <LayoutDashboard size={20} /> Go to Dashboard
+                  <LayoutDashboard size={20} /> {t("contact.go_to_dashboard")}
                 </Button>
               </Link>
               <Link href="/">
                 <Button size="lg" variant="outline" className="gap-2 px-8 py-6 text-lg border-2 border-white bg-white text-green-700 hover:bg-green-50 shadow-xl hover:shadow-2xl transition-all duration-300">
-                  <ArrowRight size={20} /> Get Recommendations
+                  <ArrowRight size={20} /> {t("contact.get_recommendations")}
                 </Button>
               </Link>
             </div>

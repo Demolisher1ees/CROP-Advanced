@@ -65,3 +65,11 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str = Field(..., min_length=6)
+
+class GoogleAuthRequest(BaseModel):
+    email: EmailStr
+    first_name: str
+    last_name: str
+
+class CheckEmailResponse(BaseModel):
+    exists: bool

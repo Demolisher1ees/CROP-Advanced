@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest
+from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest, CheckEmailResponse, GoogleAuthRequest
 from app.core.security import verify_password, get_password_hash, create_access_token
 from datetime import timedelta, datetime
 import secrets
@@ -11,6 +11,7 @@ from app.core.limiter import limiter
 from app.services.email_service import send_email
 import os
 from app.core.logger import logger
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -44,9 +45,9 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     
     # Send verification email
-    if os.getenv("SMTP_HOST"):
+    if settings.SMTP_HOST:
         try:
-            verification_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3001')}/verify?token={verification_token}"
+            verification_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/verify?token={verification_token}"
             send_email(
                 new_user.email,
                 "Verify Your Account",
@@ -87,12 +88,12 @@ async def login(request: Request, user_data: UserLogin, db: Session = Depends(ge
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
-    # Check email verification
-    if not user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email address not verified"
-        )
+    # Check email verification bypassed for development
+    # if not user.is_verified:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Email address not verified"
+    #     )
     
     # Create access token with user info
     access_token_expires = timedelta(minutes=30)
@@ -136,9 +137,9 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
         db.commit()
         
         # Send reset email
-        if os.getenv("SMTP_HOST"):
+        if settings.SMTP_HOST:
             try:
-                reset_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3001')}/reset-password?token={token}"
+                reset_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={token}"
                 send_email(
                     user.email,
                     "Reset Your Password",
@@ -176,3 +177,82 @@ async def get_current_user(db: Session = Depends(get_db)):
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail="Token validation not implemented yet"
     )
+
+@router.get("/check-email", response_model=CheckEmailResponse)
+def check_email(email: str, db: Session = Depends(get_db)):
+    """Check if an email is already registered"""
+    user = db.query(User).filter(User.email == email).first()
+    return {"exists": user is not None}
+
+@router.post("/google", response_model=Token)
+async def google_auth(user_data: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """Authenticate or register user via Google OAuth"""
+    user = db.query(User).filter(User.email == user_data.email).first()
+    
+    if not user:
+        # Generate a random secure password for the Google user
+        random_password = secrets.token_urlsafe(20) + "A1!"
+        hashed_password = get_password_hash(random_password)
+        
+        user = User(
+            email=user_data.email,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            hashed_password=hashed_password,
+            is_verified=True  # Google users are automatically verified
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
+        )
+        
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={
+            "sub": user.email,
+            "name": f"{user.first_name} {user.last_name}",
+            "user_id": user.id
+        },
+        expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "name": f"{user.first_name} {user.last_name}"
+    }
+
+
+@router.delete("/delete-account")
+async def delete_account(request: Request, db: Session = Depends(get_db)):
+    """Permanently delete a user account and all associated data."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
+
+    email = body.get("email") if body else None
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Delete associated password resets
+    db.query(PasswordReset).filter(PasswordReset.user_id == user.id).delete()
+
+    # Delete associated crops
+    from app.models.crop import Crop
+    db.query(Crop).filter(Crop.user_id == user.id).delete()
+
+    # Delete the user
+    db.delete(user)
+    db.commit()
+
+    logger.info(f"Account deleted for: {email}")
+    return {"message": "Account deleted successfully"}
