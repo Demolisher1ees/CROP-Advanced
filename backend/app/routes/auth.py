@@ -4,7 +4,7 @@ from app.database.db import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest, CheckEmailResponse, GoogleAuthRequest
 from app.core.security import verify_password, get_password_hash, create_access_token
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 import secrets
 from app.models.password_reset import PasswordReset
 from app.core.limiter import limiter
@@ -47,7 +47,7 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     # Send verification email
     if settings.SMTP_HOST:
         try:
-            verification_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/verify?token={verification_token}"
+            verification_link = f"{settings.FRONTEND_URL}/verify?token={verification_token}"
             send_email(
                 new_user.email,
                 "Verify Your Account",
@@ -131,7 +131,7 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     user = db.query(User).filter(User.email == request.email).first()
     if user:
         token = secrets.token_urlsafe(48)
-        expires = datetime.utcnow() + timedelta(minutes=15)
+        expires = datetime.now(timezone.utc) + timedelta(minutes=15)
         reset = PasswordReset(user_id=user.id, token=token, expires_at=expires)
         db.add(reset)
         db.commit()
@@ -139,7 +139,7 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
         # Send reset email
         if settings.SMTP_HOST:
             try:
-                reset_link = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={token}"
+                reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
                 send_email(
                     user.email,
                     "Reset Your Password",
@@ -157,7 +157,7 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
     """Complete password reset using token"""
     record = db.query(PasswordReset).filter(PasswordReset.token == request.token).first()
-    if not record or record.expires_at < datetime.utcnow():
+    if not record or record.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
     user = db.query(User).filter(User.id == record.user_id).first()
     if not user:

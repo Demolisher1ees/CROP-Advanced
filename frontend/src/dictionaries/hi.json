@@ -130,7 +130,8 @@
     "total_cost": "अनुमानित लागत",
     "last_checked": "अंतिम जांच",
     "sign_out": "लॉग आउट",
-    "signing_out": "लॉग आउट हो रहा है..."
+    "signing_out": "लॉग आउट हो रहा है...",
+    "get_recommendations": "सुझाव प्राप्त करें"
   },
   "profile": {
     "active_account": "सक्रिय खाता",
@@ -154,6 +155,7 @@
     "contact_support": "संपर्क सहायता",
     "contact_support_desc": "हमारी टीम से मदद लें",
     "account": "खाता",
+    "sign_out": "लॉग आउट",
     "sign_out_desc": "अपने खाते से लॉग आउट करें",
     "delete_account": "खाता हटाएं",
     "delete_account_desc": "अपना खाता और सभी डेटा स्थायी रूप से हटाएं",

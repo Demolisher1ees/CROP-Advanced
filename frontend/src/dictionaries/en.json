@@ -130,7 +130,8 @@
     "total_cost": "Estimated Cost",
     "last_checked": "Last checked",
     "sign_out": "Sign Out",
-    "signing_out": "Signing out..."
+    "signing_out": "Signing out...",
+    "get_recommendations": "Get Recommendations"
   },
   "profile": {
     "active_account": "Active Account",
@@ -154,6 +155,7 @@
     "contact_support": "Contact Support",
     "contact_support_desc": "Get help from our team",
     "account": "Account",
+    "sign_out": "Sign Out",
     "sign_out_desc": "Sign out of your account",
     "delete_account": "Delete Account",
     "delete_account_desc": "Permanently remove your account and all data",

@@ -130,7 +130,8 @@
     "total_cost": "আনুমানিক খরচ",
     "last_checked": "শেষ পরীক্ষা",
     "sign_out": "সাইন আউট",
-    "signing_out": "সাইন আউট হচ্ছে..."
+    "signing_out": "সাইন আউট হচ্ছে...",
+    "get_recommendations": "সুপারিশ পান"
   },
   "profile": {
     "active_account": "সক্রিয় অ্যাকাউন্ট",
@@ -154,6 +155,7 @@
     "contact_support": "সহায়তার জন্য যোগাযোগ করুন",
     "contact_support_desc": "আমাদের টিমের সাহায্য নিন",
     "account": "অ্যাকাউন্ট",
+    "sign_out": "সাইন আউট",
     "sign_out_desc": "আপনার অ্যাকাউন্ট থেকে সাইন আউট করুন",
     "delete_account": "অ্যাকাউন্ট মুছুন",
     "delete_account_desc": "আপনার অ্যাকাউন্ট এবং সমস্ত ডেটা স্থায়ীভাবে মুছুন",
