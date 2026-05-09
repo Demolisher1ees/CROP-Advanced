@@ -1,11 +1,18 @@
-import { Navbar } from "@/components/Navbar";
 import { HeroSection } from "@/components/HeroSection";
+import { ModalAutoOpener } from "@/components/ModalAutoOpener";
 
-export default function Home() {
+type Props = {
+  searchParams: { callbackUrl?: string; error?: string };
+};
+
+export default function Home({ searchParams }: Props) {
+  // If NextAuth redirected here with a callbackUrl or error, auto-open the sign-in modal
+  const shouldOpenModal = !!searchParams.callbackUrl || !!searchParams.error;
+
   return (
     <div className="relative">
-      <Navbar />
       <HeroSection />
+      <ModalAutoOpener shouldOpen={shouldOpenModal} />
     </div>
   );
 }

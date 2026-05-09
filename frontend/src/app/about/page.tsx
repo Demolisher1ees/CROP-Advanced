@@ -14,101 +14,93 @@ import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
 import { useAuthModalContext } from "@/components/AuthModalProvider";
 import { useSession } from "next-auth/react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 /* ─── Hero ─── */
 const Hero = () => {
-  const { setIsAuthModalOpen, triggerNavGlow } = useAuthModalContext()
+  const { triggerNavGlow } = useAuthModalContext()
   const { data: session } = useSession()
+  const { t } = useLanguage()
 
   const handleGetStarted = () => {
-    if (!session) {
-      triggerNavGlow()
-    } else {
-      window.location.href = '/'
-    }
+    if (!session) { triggerNavGlow() } else { window.location.href = '/dashboard' }
   }
-
   const handleGetRecs = () => {
-    if (!session) {
-      triggerNavGlow()
-    } else {
-      window.location.href = '/'
-    }
+    if (!session) { triggerNavGlow() } else { window.location.href = '/' }
   }
 
   return (
-  <section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-green-100 to-green-50 py-24 md:py-32">
-    <div className="absolute inset-0 opacity-10">
-      <div className="absolute top-10 left-10 text-primary"><Leaf size={120} /></div>
-      <div className="absolute bottom-10 right-10 text-green-600"><Sprout size={100} /></div>
-      <div className="absolute top-1/2 right-1/4 text-green-700"><Sun size={80} /></div>
-    </div>
-    <div className="container relative mx-auto max-w-5xl px-4 text-center">
-      <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-primary">
-        <Leaf size={20} />
-        <span className="text-sm font-semibold tracking-wide uppercase">FarmIQ</span>
+    <section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-green-100 to-green-50 py-24 md:py-32">
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-10 left-10 text-primary"><Leaf size={120} /></div>
+        <div className="absolute bottom-10 right-10 text-green-600"><Sprout size={100} /></div>
+        <div className="absolute top-1/2 right-1/4 text-green-700"><Sun size={80} /></div>
       </div>
-      <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-foreground md:text-6xl">
-        AI-Powered Real-Time<br />
-        <span className="text-primary">Crop Intelligence</span>
-      </h1>
-      <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground">
-        Optimize crop health and boost productivity with real-time soil and weather analysis powered by machine learning — actionable insights delivered to your fingertips.
-      </p>
-      <div className="flex flex-wrap items-center justify-center gap-4">
-        <button onClick={handleGetStarted}>
-          <Button size="lg" className="gap-2">
-            <LayoutDashboard size={18} /> Go to Home
-          </Button>
-        </button>
-        <button onClick={handleGetRecs}>
-          <Button size="lg" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5">
-            <Sprout size={18} /> Get Recommendations
-          </Button>
-        </button>
+      <div className="container relative mx-auto max-w-5xl px-4 text-center">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-primary">
+          <Leaf size={20} />
+          <span className="text-sm font-semibold tracking-wide uppercase">{t("about.hero_tag")}</span>
+        </div>
+        <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-foreground md:text-6xl">
+          {t("about.hero_title_part1")}<br />
+          <span className="text-primary">{t("about.hero_title_highlight")}</span>
+        </h1>
+        <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground">
+          {t("about.hero_desc")}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <button onClick={handleGetStarted}>
+            <Button size="lg" className="gap-2">
+              <LayoutDashboard size={18} /> {t("about.go_to_dashboard")}
+            </Button>
+          </button>
+          <button onClick={handleGetRecs}>
+            <Button size="lg" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5">
+              <Sprout size={18} /> {t("about.get_recommendations")}
+            </Button>
+          </button>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
   )
 }
 
 /* ─── Project Overview ─── */
-const Overview = () => (
-  <section className="py-20 bg-background">
-    <div className="container mx-auto max-w-6xl px-4">
-      <div className="grid items-center gap-12 md:grid-cols-2">
-        <div>
-          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">About the Platform</Badge>
-          <h2 className="mb-6 text-3xl font-bold text-foreground">What is FarmIQ?</h2>
-          <p className="mb-4 text-muted-foreground leading-relaxed">
-            FarmIQ is an intelligent agricultural platform that bridges the gap between farmers and modern technology. Many farmers lack access to real-time, data-driven insights about soil conditions and weather patterns that directly impact crop health.
-          </p>
-          <p className="text-muted-foreground leading-relaxed">
-            Our platform solves this by combining real-time environmental data with machine learning to deliver personalized crop care recommendations — from irrigation schedules to fertilization plans — helping farmers make smarter, faster decisions.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {[
-            { icon: BarChart3, title: "Real-Time Analysis", desc: "Live soil & weather monitoring" },
-            { icon: Brain, title: "AI-Driven Insights", desc: "ML-powered recommendations" },
-            { icon: MapPin, title: "Location-Based", desc: "Geo-specific crop advice" },
-            { icon: Zap, title: "Instant Results", desc: "Actionable data in seconds" },
-          ].map(({ icon: Icon, title, desc }) => (
-            <Card key={title} className="border-border/60 bg-card shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="flex items-start gap-3 p-4">
-                <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={20} /></div>
-                <div>
-                  <p className="font-semibold text-card-foreground">{title}</p>
-                  <p className="text-sm text-muted-foreground">{desc}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+const Overview = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto max-w-6xl px-4">
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          <div>
+            <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">{t("about.platform_badge")}</Badge>
+            <h2 className="mb-6 text-3xl font-bold text-foreground">{t("about.what_is_farmiq")}</h2>
+            <p className="mb-4 text-muted-foreground leading-relaxed">{t("about.farmiq_desc1")}</p>
+            <p className="text-muted-foreground leading-relaxed">{t("about.farmiq_desc2")}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[
+              { icon: BarChart3, title: "Real-Time Analysis", desc: "Live soil & weather monitoring" },
+              { icon: Brain, title: "AI-Driven Insights", desc: "ML-powered recommendations" },
+              { icon: MapPin, title: "Location-Based", desc: "Geo-specific crop advice" },
+              { icon: Zap, title: "Instant Results", desc: "Actionable data in seconds" },
+            ].map(({ icon: Icon, title, desc }) => (
+              <Card key={title} className="border-border/60 bg-card shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="flex items-start gap-3 p-4">
+                  <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={20} /></div>
+                  <div>
+                    <p className="font-semibold text-card-foreground">{title}</p>
+                    <p className="text-sm text-muted-foreground">{desc}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── How It Works ─── */
 const steps = [
@@ -119,37 +111,40 @@ const steps = [
   { icon: Sprout, title: "Get Recommendations", desc: "Delivers personalized crop care suggestions: irrigation, fertilization, shading, and more." },
 ];
 
-const HowItWorks = () => (
-  <section className="bg-secondary/40 py-20">
-    <div className="container mx-auto max-w-5xl px-4">
-      <div className="mb-14 text-center">
-        <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Process</Badge>
-        <h2 className="text-3xl font-bold text-foreground">How It Works</h2>
-      </div>
-      <div className="relative">
-        <div className="absolute left-6 top-0 bottom-0 hidden w-0.5 bg-border md:block" />
-        <div className="space-y-8">
-          {steps.map(({ icon: Icon, title, desc }, i) => (
-            <div key={title} className="relative flex items-start gap-6 md:pl-16">
-              <div className="z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shadow-md md:absolute md:left-0">
-                {i + 1}
+const HowItWorks = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="bg-secondary/40 py-20">
+      <div className="container mx-auto max-w-5xl px-4">
+        <div className="mb-14 text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">{t("about.process_badge")}</Badge>
+          <h2 className="text-3xl font-bold text-foreground">{t("about.how_it_works")}</h2>
+        </div>
+        <div className="relative">
+          <div className="absolute left-6 top-0 bottom-0 hidden w-0.5 bg-border md:block" />
+          <div className="space-y-8">
+            {steps.map(({ icon: Icon, title, desc }, i) => (
+              <div key={title} className="relative flex items-start gap-6 md:pl-16">
+                <div className="z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shadow-md md:absolute md:left-0">
+                  {i + 1}
+                </div>
+                <Card className="flex-1 border-border/60 shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="flex items-start gap-4 p-5">
+                    <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={22} /></div>
+                    <div>
+                      <h3 className="font-semibold text-card-foreground">{title}</h3>
+                      <p className="text-sm text-muted-foreground">{desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <Card className="flex-1 border-border/60 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="flex items-start gap-4 p-5">
-                  <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={22} /></div>
-                  <div>
-                    <h3 className="font-semibold text-card-foreground">{title}</h3>
-                    <p className="text-sm text-muted-foreground">{desc}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── Features Grid ─── */
 const features = [
@@ -163,31 +158,34 @@ const features = [
   { icon: LayoutDashboard, title: "User-Friendly Dashboard", desc: "Clean, intuitive interface designed for farmers and professionals alike." },
 ];
 
-const Features = () => (
-  <section className="py-20 bg-background">
-    <div className="container mx-auto max-w-6xl px-4">
-      <div className="mb-14 text-center">
-        <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Features</Badge>
-        <h2 className="text-3xl font-bold text-foreground">Everything You Need</h2>
+const Features = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto max-w-6xl px-4">
+        <div className="mb-14 text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">{t("about.features_badge")}</Badge>
+          <h2 className="text-3xl font-bold text-foreground">{t("about.everything_you_need")}</h2>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {features.map(({ icon: Icon, title, desc }) => (
+            <Card key={title} className="group border-border/60 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
+              <CardHeader className="pb-2">
+                <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Icon size={24} />
+                </div>
+                <CardTitle className="text-lg">{title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map(({ icon: Icon, title, desc }) => (
-          <Card key={title} className="group border-border/60 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
-            <CardHeader className="pb-2">
-              <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                <Icon size={24} />
-              </div>
-              <CardTitle className="text-lg">{title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{desc}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── Tech Stack ─── */
 const techCategories = [
@@ -198,65 +196,67 @@ const techCategories = [
   { title: "Architecture", icon: Layers, techs: ["REST API", "Real-time Processing"] },
 ];
 
-const TechStack = () => (
-  <section className="bg-secondary/40 py-20">
-    <div className="container mx-auto max-w-5xl px-4">
-      <div className="mb-14 text-center">
-        <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Technology</Badge>
-        <h2 className="text-3xl font-bold text-foreground">Built With Modern Tech</h2>
+const TechStack = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="bg-secondary/40 py-20">
+      <div className="container mx-auto max-w-5xl px-4">
+        <div className="mb-14 text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">{t("about.tech_badge")}</Badge>
+          <h2 className="text-3xl font-bold text-foreground">{t("about.built_with")}</h2>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {techCategories.map(({ title, icon: Icon, techs }) => (
+            <Card key={title} className="border-border/60 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={20} /></div>
+                  <CardTitle className="text-lg">{title}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {techs.map((tech) => (
+                  <Badge key={tech} variant="secondary" className="text-secondary-foreground">{tech}</Badge>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {techCategories.map(({ title, icon: Icon, techs }) => (
-          <Card key={title} className="border-border/60 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={20} /></div>
-                <CardTitle className="text-lg">{title}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {techs.map((t) => (
-                <Badge key={t} variant="secondary" className="text-secondary-foreground">{t}</Badge>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── Mission & Vision ─── */
-const MissionVision = () => (
-  <section className="py-20 bg-background">
-    <div className="container mx-auto max-w-5xl px-4">
-      <div className="grid gap-8 md:grid-cols-2">
-        <Card className="border-primary/20 shadow-md">
-          <CardHeader>
-            <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><Target size={24} /></div>
-            <CardTitle className="text-2xl">Our Mission</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground leading-relaxed">
-              Help farmers and agricultural users make smarter crop care decisions using AI and real-time environmental data — empowering sustainable farming practices and improving yields worldwide.
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-primary/20 shadow-md">
-          <CardHeader>
-            <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><Eye size={24} /></div>
-            <CardTitle className="text-2xl">Our Vision</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground leading-relaxed">
-              Build an intelligent agricultural ecosystem that improves productivity, sustainability, and efficiency — making modern technology accessible to every farmer through intuitive, data-driven tools.
-            </p>
-          </CardContent>
-        </Card>
+const MissionVision = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto max-w-5xl px-4">
+        <div className="grid gap-8 md:grid-cols-2">
+          <Card className="border-primary/20 shadow-md">
+            <CardHeader>
+              <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><Target size={24} /></div>
+              <CardTitle className="text-2xl">{t("about.mission_title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">{t("about.mission_desc")}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-primary/20 shadow-md">
+            <CardHeader>
+              <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><Eye size={24} /></div>
+              <CardTitle className="text-2xl">{t("about.vision_title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">{t("about.vision_desc")}</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── Team ─── */
 const team = [
@@ -264,30 +264,33 @@ const team = [
   { name: "Eeshan Ghosh", role: "Backend & ML Developer", initials: "EG", desc: "Builds ML models and backend systems for crop intelligence." },
 ];
 
-const Team = () => (
-  <section className="bg-secondary/40 py-20">
-    <div className="container mx-auto max-w-5xl px-4">
-      <div className="mb-14 text-center">
-        <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Team</Badge>
-        <h2 className="text-3xl font-bold text-foreground">Meet the Team</h2>
+const Team = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="bg-secondary/40 py-20">
+      <div className="container mx-auto max-w-5xl px-4">
+        <div className="mb-14 text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">{t("about.team_badge")}</Badge>
+          <h2 className="text-3xl font-bold text-foreground">{t("about.meet_the_team")}</h2>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 justify-center max-w-2xl mx-auto">
+          {team.map(({ name, role, initials, desc }) => (
+            <Card key={name} className="text-center border-border/60 shadow-sm hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <Avatar className="mx-auto mb-4 h-20 w-20">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">{initials}</AvatarFallback>
+                </Avatar>
+                <h3 className="font-semibold text-card-foreground">{name}</h3>
+                <p className="text-sm font-medium text-primary">{role}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-6 sm:grid-cols-2 justify-center max-w-2xl mx-auto">
-        {team.map(({ name, role, initials, desc }) => (
-          <Card key={name} className="text-center border-border/60 shadow-sm hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <Avatar className="mx-auto mb-4 h-20 w-20">
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">{initials}</AvatarFallback>
-              </Avatar>
-              <h3 className="font-semibold text-card-foreground">{name}</h3>
-              <p className="text-sm font-medium text-primary">{role}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── Why Choose ─── */
 const reasons = [
@@ -299,38 +302,61 @@ const reasons = [
   "Designed for farmers, by technologists",
 ];
 
-const WhyChoose = () => (
-  <section className="py-20 bg-background">
-    <div className="container mx-auto max-w-4xl px-4">
-      <div className="mb-14 text-center">
-        <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">Why Us</Badge>
-        <h2 className="text-3xl font-bold text-foreground">Why Choose FarmIQ?</h2>
+const WhyChoose = () => {
+  const { t } = useLanguage()
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto max-w-4xl px-4">
+        <div className="mb-14 text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/15">{t("about.why_us_badge")}</Badge>
+          <h2 className="text-3xl font-bold text-foreground">{t("about.why_choose")}</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {reasons.map((r) => (
+            <div key={r} className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-4 shadow-sm">
+              <CheckCircle2 className="shrink-0 text-primary" size={22} />
+              <span className="font-medium text-card-foreground">{r}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {reasons.map((r) => (
-          <div key={r} className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-4 shadow-sm">
-            <CheckCircle2 className="shrink-0 text-primary" size={22} />
-            <span className="font-medium text-card-foreground">{r}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  )
+}
 
 /* ─── Footer CTA ─── */
 const FooterCTA = () => {
-  return (
-  <section className="bg-primary py-20">
-    <div className="container mx-auto max-w-3xl px-4 text-center">
-      <Leaf className="mx-auto mb-6 text-primary-foreground" size={40} />
-      <h2 className="mb-4 text-3xl font-bold text-primary-foreground">Start Optimizing Your Crop Health Today</h2>
-      <p className="mx-auto mb-8 max-w-xl text-primary-foreground/80">
-        Join thousands of farmers using AI-powered insights to grow smarter, healthier crops.
-      </p>
+  const { triggerNavGlow } = useAuthModalContext()
+  const { data: session } = useSession()
+  const { t } = useLanguage()
 
-    </div>
-  </section>
+  const handleGetStarted = () => {
+    if (!session) { triggerNavGlow() } else { window.location.href = '/dashboard' }
+  }
+  const handleGetRecs = () => {
+    if (!session) { triggerNavGlow() } else { window.location.href = '/' }
+  }
+
+  return (
+    <section className="bg-primary py-20">
+      <div className="container mx-auto max-w-3xl px-4 text-center">
+        <Leaf className="mx-auto mb-6 text-primary-foreground" size={40} />
+        <h2 className="mb-4 text-3xl font-bold text-primary-foreground">{t("about.cta_title")}</h2>
+        <p className="mx-auto mb-8 max-w-xl text-primary-foreground/80">{t("about.cta_desc")}</p>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <button onClick={handleGetStarted}>
+            <Button size="lg" variant="secondary" className="gap-2">
+              <LayoutDashboard size={18} /> {t("about.go_to_dashboard")}
+            </Button>
+          </button>
+          <button onClick={handleGetRecs}>
+            <Button size="lg" variant="outline" className="gap-2 border-white bg-white !text-black hover:bg-green-50 hover:!text-black">
+              <ArrowRight size={18} /> {t("about.get_recommendations")}
+            </Button>
+          </button>
+        </div>
+      </div>
+    </section>
   )
 }
 

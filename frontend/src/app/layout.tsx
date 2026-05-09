@@ -4,6 +4,8 @@ import './globals.css'
 import Providers from '@/components/Providers'
 import { AuthModalProvider } from '@/components/AuthModalProvider'
 import { AuthModal } from '@/components/AuthModal'
+import { Navbar } from '@/components/Navbar'
+import { LanguageProvider } from '@/components/LanguageProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,10 +23,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          <AuthModalProvider>
-            <AuthModal />
-            {children}
-          </AuthModalProvider>
+          <LanguageProvider>
+            <AuthModalProvider>
+              <AuthModal />
+              <Navbar />
+              {children}
+            </AuthModalProvider>
+          </LanguageProvider>
         </Providers>
       </body>
     </html>

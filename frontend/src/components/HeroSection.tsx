@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useAuthModalContext } from "@/components/AuthModalProvider"
 import { Search, MapPin, Sparkles, ChevronDown, Loader } from "lucide-react"
+import { useLanguage } from "@/components/LanguageProvider"
 import { 
   fetchWeatherData, 
   fetchSoilData, 
@@ -13,9 +14,18 @@ import {
   type SoilData
 } from "@/lib/weatherService"
 
+const CROPS = [
+  "Bajra (Pearl Millet)", "Barley", "Black Gram (Urad)", "Chickpea (Chana)", 
+  "Coconut", "Coffee", "Corn (Maize)", "Cotton", "Groundnut (Peanut)", 
+  "Jowar (Sorghum)", "Jute", "Lentil (Masoor)", "Millet", "Mustard", "Onion", 
+  "Pigeon Pea (Arhar/Tur)", "Potato", "Ragi (Finger Millet)", "Rice (Paddy)", 
+  "Sesame", "Soybean", "Sugarcane", "Sunflower", "Tea", "Tomato", "Wheat"
+]
+
 export function HeroSection() {
   const { data: session } = useSession()
   const { triggerNavGlow, setIsAuthModalOpen } = useAuthModalContext()
+  const { t } = useLanguage()
 
   const [location, setLocation] = useState<string>("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -24,6 +34,7 @@ export function HeroSection() {
   const [soilData, setSoilData] = useState<SoilData | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(false)
   const [selectedCrop, setSelectedCrop] = useState<string>("")
+  const [isCropDropdownOpen, setIsCropDropdownOpen] = useState(false)
   const [recommendations, setRecommendations] = useState<any>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showManualInput, setShowManualInput] = useState(false)
@@ -360,17 +371,18 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative min-h-screen flex items-center bg-cover bg-center bg-no-repeat py-12 px-4 sm:px-6 lg:px-8" style={{
-      backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=80')",
+    <section className={`relative flex items-center bg-cover bg-center bg-no-repeat py-12 px-4 sm:px-6 lg:px-8 ${(!recommendations && !isLoadingData) ? 'h-[calc(100vh-65px)] overflow-hidden' : 'min-h-[calc(100vh-65px)]'}`} style={{
+      backgroundImage: "url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=80')",
       backgroundAttachment: 'fixed'
     }}>
-      <div className="w-full max-w-5xl mx-auto">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-[6px] pointer-events-none z-0" />
+      <div className="relative z-10 w-full max-w-5xl mx-auto">
         {/* Main Card Container */}
-        <div className="bg-white rounded-[20px] p-6 sm:p-8 shadow-xl mb-8">
+        <div className="bg-white dark:bg-gray-900 rounded-[20px] p-6 sm:p-8 shadow-xl mb-8 border border-transparent dark:border-gray-800 transition-colors">
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
-            <Search className="w-6 h-6 text-green-600" strokeWidth={2.5} />
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Get Crop Recommendations</h2>
+            <Search className="w-6 h-6 text-green-600 dark:text-green-500" strokeWidth={2.5} />
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{t("hero.title")}</h2>
           </div>
 
           {/* Error Display */}
@@ -388,7 +400,7 @@ export function HeroSection() {
               
               {/* Location Section */}
               <div>
-                <label className="text-sm font-semibold text-gray-800 mb-2 block">📍 Location</label>
+                <label className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 block">{t("hero.location_label")}</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Search className="w-4 h-4" />
@@ -402,29 +414,29 @@ export function HeroSection() {
                   )}
                   <input
                     type="text"
-                    placeholder="Enter zip, city, or address"
+                    placeholder={t("hero.location_placeholder")}
                     value={location}
                     readOnly
-                    className={`hero-text-input w-full pl-9 pr-36 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm ${!session ? 'text-gray-900 bg-gray-50 cursor-not-allowed' : 'text-gray-900 bg-white cursor-text'}`}
+                    className={`hero-text-input w-full pl-9 pr-36 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm ${!session ? 'text-gray-900 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : 'text-gray-900 dark:text-white bg-white dark:bg-gray-800 cursor-text'}`}
                   />
                   <button
                     onClick={handleDetectLocationClick}
                     disabled={isDetecting || !session}
                     className={`absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                       !session || isDetecting
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-green-50 text-green-700 hover:bg-green-100'
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                        : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50'
                     }`}
                   >
                     {isDetecting ? (
                       <>
                         <Loader className="w-3 h-3 animate-spin" />
-                        <span className="hidden sm:inline">Detecting...</span>
+                        <span className="hidden sm:inline">{t("hero.detecting")}</span>
                       </>
                     ) : (
                       <>
                         <MapPin className="w-3 h-3" />
-                        <span className="hidden md:inline">Detect My Location</span>
+                        <span className="hidden md:inline">{t("hero.detect_location")}</span>
                       </>
                     )}
                   </button>
@@ -433,11 +445,8 @@ export function HeroSection() {
 
               {/* Crop Selection Section */}
               <div>
-                <label className="text-sm font-semibold text-gray-800 mb-2 block">✨ Select Crop</label>
+                <label className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 block">{t("hero.select_crop")}</label>
                 <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <Search className="w-4 h-4" />
-                  </div>
                   {/* Transparent overlay blocks interaction and triggers glow when not signed in */}
                   {!session && (
                     <div
@@ -445,44 +454,55 @@ export function HeroSection() {
                       onClick={() => triggerNavGlow()}
                     />
                   )}
-                  <select
-                    value={selectedCrop}
-                    onChange={(e) => handleCropChange(e.target.value)}
-                    disabled={!session}
-                    className={`hero-select w-full pl-9 pr-9 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm appearance-none cursor-pointer text-gray-900 ${!session ? 'bg-gray-50 text-gray-500' : 'bg-white text-gray-900'}`}
+                  
+                  {/* Custom Glassmorphism Dropdown Trigger */}
+                  <div 
+                    onClick={() => session && setIsCropDropdownOpen(!isCropDropdownOpen)}
+                    className={`w-full flex items-center justify-between pl-3 pr-9 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg transition-all text-sm cursor-pointer ${
+                      !session ? 'bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                    }`}
                   >
-                  <option value="">Choose a crop</option>
-                  <option>Bajra (Pearl Millet)</option>
-                  <option>Barley</option>
-                  <option>Black Gram (Urad)</option>
-                  <option>Chickpea (Chana)</option>
-                  <option>Coconut</option>
-                  <option>Coffee</option>
-                  <option>Corn (Maize)</option>
-                  <option>Cotton</option>
-                  <option>Groundnut (Peanut)</option>
-                  <option>Jowar (Sorghum)</option>
-                  <option>Jute</option>
-                  <option>Lentil (Masoor)</option>
-                  <option>Millet</option>
-                  <option>Mustard</option>
-                  <option>Onion</option>
-                  <option>Pigeon Pea (Arhar/Tur)</option>
-                  <option>Potato</option>
-                  <option>Ragi (Finger Millet)</option>
-                  <option>Rice (Paddy)</option>
-                  <option>Sesame</option>
-                  <option>Soybean</option>
-                  <option>Sugarcane</option>
-                  <option>Sunflower</option>
-                  <option>Tea</option>
-                  <option>Tomato</option>
-                  <option>Wheat</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                      <ChevronDown className="w-4 h-4" />
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="truncate">{selectedCrop || t("hero.choose_crop")}</span>
                     </div>
                   </div>
+                  
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isCropDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {/* Dropdown Menu (Glassmorphism & Centered Items) */}
+                  {isCropDropdownOpen && session && (
+                    <>
+                      {/* Invisible backdrop to catch outside clicks */}
+                      <div 
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsCropDropdownOpen(false)}
+                      />
+                      <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border border-white/50 dark:border-gray-700 bg-white/80 dark:bg-gray-800/90 backdrop-blur-md shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="max-h-60 overflow-y-auto py-2 custom-scrollbar hide-scrollbar">
+                          {CROPS.map((crop) => (
+                            <div
+                              key={crop}
+                              onClick={() => {
+                                handleCropChange(crop)
+                                setIsCropDropdownOpen(false)
+                              }}
+                              className={`px-4 py-3 text-sm text-center cursor-pointer transition-colors ${
+                                selectedCrop === crop 
+                                  ? 'bg-green-600/10 text-green-700 dark:text-green-400 font-semibold' 
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-green-700 dark:hover:text-green-400'
+                              }`}
+                            >
+                              {crop}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -503,40 +523,40 @@ export function HeroSection() {
                 {isAnalyzing ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
-                    <span className="hidden sm:inline">Analyzing...</span>
+                    <span className="hidden sm:inline">{t("hero.analyzing")}</span>
                   </>
                 ) : (
-                  <span>Get Recommendations</span>
+                  <span>{t("hero.get_recommendations")}</span>
                 )}
               </button>
             </div>
 
             {/* Location Data Display - Only when location is set */}
             {location && (
-              <div className="space-y-2 pt-2 border-t border-gray-200">
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-xs text-green-800 flex items-center gap-1">
-                    <span className="text-green-600">✓</span>
+              <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-lg">
+                  <p className="text-xs text-green-800 dark:text-green-300 flex items-center gap-1">
+                    <span className="text-green-600 dark:text-green-400">✓</span>
                     {location}
                   </p>
                 </div>
 
                 {isLoadingData && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
-                    <Loader className="w-4 h-4 animate-spin text-blue-600" />
-                    <p className="text-xs text-blue-700">Fetching weather and soil data...</p>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+                    <p className="text-xs text-blue-700 dark:text-blue-300">{t("hero.fetching_data")}</p>
                   </div>
                 )}
 
                 {weatherData && !isLoadingData && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs font-semibold text-blue-900 mb-1">Weather: {weatherData.temperature.toFixed(1)}°C, {weatherData.humidity}% humidity</p>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg">
+                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 mb-1">{t("hero.weather_label")}: {weatherData.temperature.toFixed(1)}°C, {weatherData.humidity}% {t("hero.humidity")}</p>
                   </div>
                 )}
 
                 {soilData && !isLoadingData && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs font-semibold text-amber-900">Soil: pH {soilData.ph.toFixed(1)}, N {soilData.nitrogen.toFixed(1)}g/kg</p>
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg">
+                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">{t("hero.soil_label")}: pH {soilData.ph.toFixed(1)}, N {soilData.nitrogen.toFixed(1)}g/kg</p>
                   </div>
                 )}
               </div>
@@ -546,14 +566,14 @@ export function HeroSection() {
 
         {/* Recommendations Results */}
         {recommendations && (
-          <div className="bg-white rounded-[20px] p-6 sm:p-8 shadow-xl">
+          <div className="bg-white dark:bg-gray-900 rounded-[20px] p-6 sm:p-8 shadow-xl border border-transparent dark:border-gray-800 transition-colors">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  Analysis for {recommendations.crop}
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  {t("hero.analysis_for")} {recommendations.crop}
                 </h2>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Score:</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{t("hero.score")}:</span>
                   <span className={`text-3xl font-bold ${
                     recommendations.suitability_score >= 80 ? 'text-green-600' :
                     recommendations.suitability_score >= 60 ? 'text-yellow-600' :
@@ -578,9 +598,9 @@ export function HeroSection() {
 
               {/* Conditions Comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="font-semibold text-blue-900 mb-3">Optimal Conditions</h3>
-                  <div className="space-y-2 text-sm text-blue-800">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/50">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-3">{t("hero.optimal_conditions")}</h3>
+                  <div className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
                     {Object.entries(recommendations.optimal_conditions).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span className="capitalize">{key.replace(/_/g, ' ')}:</span>
@@ -590,9 +610,9 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h3 className="font-semibold text-green-900 mb-3">Current Conditions</h3>
-                  <div className="space-y-2 text-sm text-green-800">
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800/50">
+                  <h3 className="font-semibold text-green-900 dark:text-green-200 mb-3">{t("hero.current_conditions")}</h3>
+                  <div className="space-y-2 text-sm text-green-800 dark:text-green-300">
                     {Object.entries(recommendations.current_conditions).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span className="capitalize">{key.replace(/_/g, ' ')}:</span>
@@ -605,29 +625,29 @@ export function HeroSection() {
 
               {/* Recommendations */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Recommendations</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t("hero.recommendations_label")}</h3>
                 <div className="space-y-3">
                   {recommendations.recommendations.map((rec: any, index: number) => (
                     <div 
                       key={index}
                       className={`p-4 rounded-lg border-l-4 ${
-                        rec.priority === 'high' ? 'bg-red-50 border-red-500' :
-                        rec.priority === 'medium' ? 'bg-yellow-50 border-yellow-500' :
-                        'bg-green-50 border-green-500'
+                        rec.priority === 'high' ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
+                        rec.priority === 'medium' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500' :
+                        'bg-green-50 dark:bg-green-900/20 border-green-500'
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className={`mt-1 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
-                          rec.priority === 'high' ? 'bg-red-200 text-red-800' :
-                          rec.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' :
-                          'bg-green-200 text-green-800'
+                          rec.priority === 'high' ? 'bg-red-200 dark:bg-red-900/40 text-red-800 dark:text-red-300' :
+                          rec.priority === 'medium' ? 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300' :
+                          'bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-300'
                         }`}>
                           {rec.priority.toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">{rec.category}</h4>
-                          <p className="text-sm text-gray-700 mb-2">{rec.message}</p>
-                          <p className="text-sm text-gray-600 italic">💡 {rec.action}</p>
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{rec.category}</h4>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{rec.message}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 italic">💡 {rec.action}</p>
                         </div>
                       </div>
                     </div>

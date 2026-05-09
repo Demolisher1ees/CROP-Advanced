@@ -16,7 +16,8 @@
   }
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -73,7 +74,7 @@ input:-ms-input-placeholder {
 
 .hero-text-input,
 .hero-select {
-  color: #111827 !important;
+  /* color: #111827 !important; */
 }
 
 /* Disabled select cursor */
@@ -149,18 +150,24 @@ select.btn-3d:active {
 
 /* Bubble animation for select dropdown */
 @keyframes bubble-float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) scale(1);
   }
+
   50% {
     transform: translateY(-3px) scale(1.02);
   }
 }
 
 @keyframes bubble-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 0 rgba(22, 163, 74, 0);
   }
+
   50% {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 8px rgba(22, 163, 74, 0.1);
   }
@@ -216,10 +223,13 @@ select.btn-3d option:hover {
 }
 
 @keyframes bubble-float-1 {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
     opacity: 0.3;
   }
+
   50% {
     transform: translate(-5px, -8px) scale(1.1);
     opacity: 0.6;
@@ -227,10 +237,13 @@ select.btn-3d option:hover {
 }
 
 @keyframes bubble-float-2 {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
     opacity: 0.3;
   }
+
   50% {
     transform: translate(5px, 8px) scale(1.15);
     opacity: 0.6;
@@ -247,9 +260,12 @@ select.btn-3d option:hover {
 }
 
 @keyframes bubble-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
   }
+
   50% {
     box-shadow: 0 0 20px 5px rgba(22, 163, 74, 0.2);
   }
@@ -257,15 +273,18 @@ select.btn-3d option:hover {
 
 /* Pulsating glow effect for Get Started button */
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7),
-                0 4px 8px rgba(0, 0, 0, 0.1),
-                0 2px 4px rgba(0, 0, 0, 0.06);
+      0 4px 8px rgba(0, 0, 0, 0.1),
+      0 2px 4px rgba(0, 0, 0, 0.06);
   }
+
   50% {
     box-shadow: 0 0 0 15px rgba(22, 163, 74, 0),
-                0 4px 8px rgba(0, 0, 0, 0.1),
-                0 2px 4px rgba(0, 0, 0, 0.06);
+      0 4px 8px rgba(0, 0, 0, 0.1),
+      0 2px 4px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -275,13 +294,24 @@ select.btn-3d option:hover {
 
 /* Shaking animation for button */
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0) rotate(0deg);
   }
-  10%, 30%, 50%, 70%, 90% {
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-2px) rotate(-0.5deg);
   }
-  20%, 40%, 60%, 80% {
+
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(2px) rotate(0.5deg);
   }
 }
@@ -296,6 +326,7 @@ select.btn-3d option:hover {
     opacity: 0;
     transform: translateY(-60px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -308,6 +339,7 @@ select.btn-3d option:hover {
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -319,6 +351,7 @@ select.btn-3d option:hover {
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -331,4 +364,123 @@ select.btn-3d option:hover {
 
 .tab-content-exit {
   animation: slideInLeft 0.3s ease-in-out forwards;
+}
+
+/* ─── Glassmorphism Hero ─────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(74, 222, 128, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18) !important;
+  outline: none !important;
+}
+
+.glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.38) !important;
+  opacity: 1 !important;
+}
+
+.glass-select {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.glass-select option {
+  background: #1a2e1a !important;
+  color: #e2f3e2 !important;
+  padding: 8px 12px;
+}
+
+.glass-select:focus {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(74, 222, 128, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18) !important;
+  outline: none !important;
+  animation: none !important;
+}
+
+.glass-select:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+}
+
+.glass-btn-detect {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
+}
+
+.glass-btn-detect:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: white;
+}
+
+/* Hero card entrance */
+@keyframes heroCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hero-card-animate {
+  animation: heroCardIn 0.6s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+}
+
+/* Hide scrollbar while keeping scroll functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE / Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+/* Fertilizer number inputs — hide native spinners; custom arrows added in JSX */
+.fert-input::-webkit-inner-spin-button,
+.fert-input::-webkit-outer-spin-button {
+  display: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.fert-input {
+  -moz-appearance: textfield;
+  /* Firefox */
+}
+
+.fert-input:focus {
+  outline: none;
+  border-color: rgb(251 191 36);
+  /* amber-400 */
 }

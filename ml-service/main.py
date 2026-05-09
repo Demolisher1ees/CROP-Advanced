@@ -19,12 +19,12 @@ try:
     if MODEL_PATH.exists():
         import joblib
         model = joblib.load(MODEL_PATH)
-        print(f"✅ Loaded ML model from {MODEL_PATH}")
+        print(f"Loaded ML model from {MODEL_PATH}")
     else:
-        print("⚠️ No pre-trained ML model found, using rule-based logic")
+        print("WARNING: No pre-trained ML model found, using rule-based logic")
 except Exception as e:
-    print(f"❌ Error loading ML model: {e}")
-    model = None
+    print(f"Error loading ML model: {e}")
+    print("WARNING: Using rule-based fallback logic")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,28 +37,27 @@ async def lifespan(app: FastAPI):
             Path("/app/data/crop_data.csv"),
             Path("../data/crop_data.csv")
         ]
-        
-        print(f"🔍 Current working directory: {os.getcwd()}")
-        print(f"🔍 Looking for dataset in: {[str(p) for p in possible_paths]}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Looking for dataset in: {[str(p) for p in possible_paths]}")
         
         for path in possible_paths:
             if path.exists():
                 crop_df = pd.read_csv(path)
-                print(f"✅ Loaded crop dataset from {path}: {len(crop_df)} records")
-                print(f"📊 Columns: {crop_df.columns.tolist()}")
+                print(f"Loaded crop dataset from {path}: {len(crop_df)} records")
+                print(f"Columns: {crop_df.columns.tolist()}")
                 break
         else:
-            print(f"⚠️  Dataset not found in any of the expected locations")
-            print(f"📁 Files in current directory: {os.listdir('.')}")
+            print(f"WARNING: Dataset not found in any of the expected locations")
+            print(f"Files in current directory: {os.listdir('.')}")
             if os.path.exists('data'):
-                print(f"📁 Files in data directory: {os.listdir('data')}")
+                print(f"Files in data directory: {os.listdir('data')}")
     except Exception as e:
-        print(f"❌ Error loading dataset: {e}")
+        print(f"Error loading dataset: {e}")
     
     yield
     
     # Shutdown
-    print("🛑 Shutting down ML service")
+    print("Shutting down ML service")
 
 app = FastAPI(title="FarmIQ ML Service", lifespan=lifespan)
 
