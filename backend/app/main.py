@@ -1,4 +1,3 @@
-print("--- SERVER STARTING UP ---", flush=True)
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,14 +15,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        await init_db()
-        print("Database initialized successfully")
-    except Exception as e:
-        print(f"CRITICAL: Database initialization failed: {e}")
-        # Don't raise here if you want the app to stay up for debugging, 
-        # but usually we want it to fail fast.
-        raise e
+    await init_db()
     yield
 
 # initialize rate limiter

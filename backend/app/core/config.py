@@ -59,11 +59,4 @@ class Settings(BaseSettings):
         case_sensitive = True
         extra = "ignore"
 
-try:
-    settings = Settings()
-    print("Settings loaded successfully")
-except Exception as e:
-    print(f"CRITICAL: Settings validation failed: {e}")
-    if hasattr(e, 'errors'):
-        print(f"Pydantic Errors: {e.errors()}")
-    raise e
+settings = Settings()
