@@ -15,7 +15,14 @@ from slowapi.middleware import SlowAPIMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    try:
+        await init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"CRITICAL: Database initialization failed: {e}")
+        # Don't raise here if you want the app to stay up for debugging, 
+        # but usually we want it to fail fast.
+        raise e
     yield
 
 # initialize rate limiter
