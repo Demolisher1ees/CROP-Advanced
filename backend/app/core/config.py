@@ -40,18 +40,16 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    from pydantic import root_validator
+    from pydantic import model_validator
 
-    @root_validator(pre=True)
+    @model_validator(mode='before')
+    @classmethod
     def check_secrets(cls, values):
         # ensure critical secrets are set and not empty
         if not values.get('SECRET_KEY'):
             raise ValueError("SECRET_KEY environment variable is required")
         if not values.get('JWT_SECRET_KEY'):
             raise ValueError("JWT_SECRET_KEY environment variable is required")
-        if not values.get('AUTH_SECRET') and not os.getenv('AUTH_SECRET'):
-            # frontend secret for NextAuth may also be used
-            pass  # not critical for backend but note for documentation
         return values
 
     class Config:
