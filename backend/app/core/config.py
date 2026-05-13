@@ -53,13 +53,17 @@ class Settings(BaseSettings):
         return values
 
     class Config:
-        env_file = str(ENV_FILE)
+        if ENV_FILE.exists():
+            env_file = str(ENV_FILE)
         env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"
 
 try:
     settings = Settings()
+    print("Settings loaded successfully")
 except Exception as e:
     print(f"CRITICAL: Settings validation failed: {e}")
+    if hasattr(e, 'errors'):
+        print(f"Pydantic Errors: {e.errors()}")
     raise e
