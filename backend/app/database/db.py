@@ -12,7 +12,8 @@ async def init_db():
     """Initialize MongoDB connection and Beanie ODM"""
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     # The database name is the path part of the URL (e.g., /crop_advisor)
-    db_name = settings.MONGODB_URL.split("/")[-1].split("?")[0]
+    parsed_db_name = settings.MONGODB_URL.split("/")[-1].split("?")[0]
+    db_name = parsed_db_name if parsed_db_name else "crop_advisor"
     
     await init_beanie(
         database=client[db_name],
