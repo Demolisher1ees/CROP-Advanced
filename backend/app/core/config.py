@@ -60,4 +60,8 @@ class Settings(BaseSettings):
         case_sensitive = True
         extra = "ignore"
 
-settings = Settings()
+try:
+    settings = Settings()
+except Exception as e:
+    print(f"CRITICAL: Settings validation failed: {e}")
+    raise e
