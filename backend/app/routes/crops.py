@@ -1,24 +1,23 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from app.schemas.crop import CropCreate, CropResponse, CropDetails
 from typing import List
-from app.database.db import get_db
 from app.models.crop import Crop
 from datetime import datetime
 import random
+from beanie import PydanticObjectId
 
 router = APIRouter()
 
 
 @router.get("/crops", response_model=List[CropResponse])
-def get_crops(db: Session = Depends(get_db)):
+async def get_crops():
     """Get all crops from database"""
-    crops = db.query(Crop).all()
+    crops = await Crop.find_all().to_list()
     return crops
 
 
 @router.post("/crops", response_model=CropResponse)
-def create_crop(crop: CropCreate, db: Session = Depends(get_db)):
+async def create_crop(crop: CropCreate):
     """Create a new crop and store in database"""
     # create DB object
     db_crop = Crop(
@@ -38,27 +37,34 @@ def create_crop(crop: CropCreate, db: Session = Depends(get_db)):
         risk_level=random.choice(["Low", "Medium", "High"]),
         last_checked=datetime.now()
     )
-    db.add(db_crop)
-    db.commit()
-    db.refresh(db_crop)
+    await db_crop.insert()
     return db_crop
 
 
 @router.get("/crops/{crop_id}", response_model=CropDetails)
-def get_crop_details(crop_id: int, db: Session = Depends(get_db)):
+async def get_crop_details(crop_id: str):
     """Get detailed information about a specific crop from database"""
-    crop = db.query(Crop).filter(Crop.id == crop_id).first()
+    try:
+        oid = PydanticObjectId(crop_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid crop ID format")
+        
+    crop = await Crop.get(oid)
     if not crop:
         raise HTTPException(status_code=404, detail="Crop not found")
     return crop
 
 
 @router.delete("/crops/{crop_id}")
-def delete_crop(crop_id: int, db: Session = Depends(get_db)):
+async def delete_crop(crop_id: str):
     """Delete a crop from the database"""
-    crop = db.query(Crop).filter(Crop.id == crop_id).first()
+    try:
+        oid = PydanticObjectId(crop_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid crop ID format")
+        
+    crop = await Crop.get(oid)
     if not crop:
         raise HTTPException(status_code=404, detail="Crop not found")
-    db.delete(crop)
-    db.commit()
+    await crop.delete()
     return {"message": "Crop deleted successfully"}

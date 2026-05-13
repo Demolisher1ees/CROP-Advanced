@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation";
 import {
   Leaf, Sun, Droplets, MapPin, Cpu, CloudSun, BarChart3,
   Sprout, Zap, Globe, Server, LayoutDashboard, Target,
@@ -20,12 +21,13 @@ const Hero = () => {
   const { triggerNavGlow } = useAuthModalContext()
   const { data: session } = useSession()
   const { t } = useLanguage()
+  const router = useRouter()
 
   const handleGetStarted = () => {
-    if (!session) { triggerNavGlow() } else { window.location.href = '/dashboard' }
+    if (!session) { triggerNavGlow() } else { router.push('/crops') }
   }
   const handleGetRecs = () => {
-    if (!session) { triggerNavGlow() } else { window.location.href = '/' }
+    if (!session) { triggerNavGlow() } else { router.push('/') }
   }
 
   return (
@@ -84,17 +86,17 @@ const Overview = () => {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
-              { icon: BarChart3, title: "Real-Time Analysis", desc: "Live soil & weather monitoring" },
-              { icon: Brain, title: "AI-Driven Insights", desc: "ML-powered recommendations" },
-              { icon: MapPin, title: "Location-Based", desc: "Geo-specific crop advice" },
-              { icon: Zap, title: "Instant Results", desc: "Actionable data in seconds" },
-            ].map(({ icon: Icon, title, desc }) => (
-              <Card key={title} className="border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-800/80 shadow-sm hover:shadow-md transition-shadow">
+              { icon: BarChart3, key: "o1" },
+              { icon: Brain, key: "o2" },
+              { icon: MapPin, key: "o3" },
+              { icon: Zap, key: "o4" },
+            ].map(({ icon: Icon, key }) => (
+              <Card key={key} className="border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-800/80 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="flex items-start gap-3 p-4">
                   <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={20} /></div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{title}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-300">{desc}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{t(`about.overview_list.${key}.title`)}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">{t(`about.overview_list.${key}.desc`)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -108,11 +110,11 @@ const Overview = () => {
 
 /* ─── How It Works ─── */
 const steps = [
-  { icon: MapPin, title: "Detect Location", desc: "Automatically detects the user's geographic location using geolocation APIs." },
-  { icon: CloudSun, title: "Fetch Weather Data", desc: "Retrieves real-time weather conditions including temperature, humidity, and rainfall." },
-  { icon: Droplets, title: "Fetch Soil Data", desc: "Collects live soil health data such as pH, moisture, and nutrient levels." },
-  { icon: Cpu, title: "ML Analysis", desc: "Processes all data through a trained RandomForest model for intelligent analysis." },
-  { icon: Sprout, title: "Get Recommendations", desc: "Delivers personalized crop care suggestions: irrigation, fertilization, shading, and more." },
+  { icon: MapPin, key: "s1" },
+  { icon: CloudSun, key: "s2" },
+  { icon: Droplets, key: "s3" },
+  { icon: Cpu, key: "s4" },
+  { icon: Sprout, key: "s5" },
 ];
 
 const HowItWorks = () => {
@@ -127,8 +129,8 @@ const HowItWorks = () => {
         <div className="relative">
           <div className="absolute left-6 top-0 bottom-0 hidden w-0.5 bg-border md:block" />
           <div className="space-y-8">
-            {steps.map(({ icon: Icon, title, desc }, i) => (
-              <div key={title} className="relative flex items-center gap-6 md:pl-16">
+            {steps.map(({ icon: Icon, key }, i) => (
+              <div key={key} className="relative flex items-center gap-6 md:pl-16">
                 <div className="z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shadow-md md:absolute md:left-0 md:top-1/2 md:-translate-y-1/2">
                   {i + 1}
                 </div>
@@ -136,8 +138,8 @@ const HowItWorks = () => {
                   <CardContent className="flex items-start gap-4 p-5">
                     <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={22} /></div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-300">{desc}</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{t(`about.steps_list.${key}.title`)}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-300">{t(`about.steps_list.${key}.desc`)}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -152,14 +154,14 @@ const HowItWorks = () => {
 
 /* ─── Features Grid ─── */
 const features = [
-  { icon: BarChart3, title: "Real-Time Monitoring", desc: "Continuously track crop and environmental conditions with live data feeds." },
-  { icon: Brain, title: "AI Recommendations", desc: "Receive intelligent, data-backed crop care suggestions powered by machine learning." },
-  { icon: CloudSun, title: "Weather Integration", desc: "Live weather data ensures your crop plans adapt to current conditions." },
-  { icon: Droplets, title: "Soil Health Analysis", desc: "Deep soil insights including pH, moisture, and nutrient composition." },
-  { icon: Sprout, title: "Crop Care Suggestions", desc: "Actionable advice on irrigation, fertilization, shading, and pest control." },
-  { icon: Globe, title: "Location Intelligence", desc: "Geo-specific recommendations tailored to your region's conditions." },
-  { icon: Server, title: "Scalable Backend", desc: "Fast, reliable FastAPI backend built for performance at any scale." },
-  { icon: LayoutDashboard, title: "User-Friendly Dashboard", desc: "Clean, intuitive interface designed for farmers and professionals alike." },
+  { icon: BarChart3, key: "f1" },
+  { icon: Brain, key: "f2" },
+  { icon: CloudSun, key: "f3" },
+  { icon: Droplets, key: "f4" },
+  { icon: Sprout, key: "f5" },
+  { icon: Globe, key: "f6" },
+  { icon: Server, key: "f7" },
+  { icon: LayoutDashboard, key: "f8" },
 ];
 
 const Features = () => {
@@ -172,16 +174,16 @@ const Features = () => {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t("about.everything_you_need")}</h2>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map(({ icon: Icon, title, desc }) => (
-            <Card key={title} className="group border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-800/80 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
+          {features.map(({ icon: Icon, key }) => (
+            <Card key={key} className="group border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-800/80 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
               <CardHeader className="pb-2">
                 <div className="mb-2 inline-flex rounded-xl bg-primary/10 p-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   <Icon size={24} />
                 </div>
-                <CardTitle className="text-lg text-gray-900 dark:text-white">{title}</CardTitle>
+                <CardTitle className="text-lg text-gray-900 dark:text-white">{t(`about.features_list.${key}.title`)}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500 dark:text-gray-300">{desc}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">{t(`about.features_list.${key}.desc`)}</p>
               </CardContent>
             </Card>
           ))}
@@ -193,11 +195,11 @@ const Features = () => {
 
 /* ─── Tech Stack ─── */
 const techCategories = [
-  { title: "Frontend", icon: Code2, techs: ["Next.js", "React", "TypeScript", "TailwindCSS"] },
-  { title: "Backend", icon: Server, techs: ["Python", "FastAPI"] },
-  { title: "Machine Learning", icon: Brain, techs: ["Scikit-learn", "RandomForest"] },
-  { title: "APIs & Data", icon: Database, techs: ["Weather API", "Soil Data API"] },
-  { title: "Architecture", icon: Layers, techs: ["REST API", "Real-time Processing"] },
+  { key: "t1", icon: Code2 },
+  { key: "t2", icon: Server },
+  { key: "t3", icon: Brain },
+  { key: "t4", icon: Database },
+  { key: "t5", icon: Layers },
 ];
 
 const TechStack = () => {
@@ -210,21 +212,23 @@ const TechStack = () => {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t("about.built_with")}</h2>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {techCategories.map(({ title, icon: Icon, techs }) => (
-            <Card key={title} className="border-gray-200 dark:border-gray-700/30 bg-white dark:bg-gray-800/80 shadow-sm">
+          {techCategories.map(({ key, icon: Icon }) => {
+            const techs = t(`about.tech_list.${key}.techs`) as unknown as string[];
+            return (
+            <Card key={key} className="border-gray-200 dark:border-gray-700/30 bg-white dark:bg-gray-800/80 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-primary/10 p-2 text-primary"><Icon size={20} /></div>
-                  <CardTitle className="text-lg text-gray-900 dark:text-white">{title}</CardTitle>
+                  <CardTitle className="text-lg text-gray-900 dark:text-white">{t(`about.tech_list.${key}.title`)}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
-                {techs.map((tech) => (
+                {Array.isArray(techs) && techs.map((tech: string) => (
                   <Badge key={tech} variant="secondary" className="text-gray-700 dark:text-gray-100 dark:bg-gray-700">{tech}</Badge>
                 ))}
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       </div>
     </section>
@@ -297,14 +301,7 @@ const Team = () => {
 }
 
 /* ─── Why Choose ─── */
-const reasons = [
-  "Real-time intelligent recommendations",
-  "AI-powered decision making",
-  "Accurate environmental analysis",
-  "Fast and reliable system",
-  "Modern and scalable architecture",
-  "Designed for farmers, by technologists",
-];
+const reasons = [0, 1, 2, 3, 4, 5];
 
 const WhyChoose = () => {
   const { t } = useLanguage()
@@ -319,7 +316,7 @@ const WhyChoose = () => {
           {reasons.map((r) => (
             <div key={r} className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-800/80 p-4 shadow-sm">
               <CheckCircle2 className="shrink-0 text-primary" size={22} />
-              <span className="font-medium text-gray-900 dark:text-white">{r}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{t(`about.reasons_list.${r}`)}</span>
             </div>
           ))}
         </div>

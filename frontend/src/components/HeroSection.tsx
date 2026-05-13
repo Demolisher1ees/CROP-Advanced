@@ -22,10 +22,164 @@ const CROPS = [
   "Sesame", "Soybean", "Sugarcane", "Sunflower", "Tea", "Tomato", "Wheat"
 ]
 
+const getCropKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/_$/, '')
+
 export function HeroSection() {
   const { data: session } = useSession()
   const { triggerNavGlow, setIsAuthModalOpen } = useAuthModalContext()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+
+  const tCrop = (name: string) => {
+    if (!name) return "";
+    const translated = t(`crop_names.${getCropKey(name)}`);
+    return translated.startsWith("crop_names.") ? name : translated;
+  }
+
+  const translateEnvKey = (key: string) => {
+    const k = `hero.env_${key}`;
+    const trans = t(k);
+    return trans.startsWith("hero.") ? key.replace(/_/g, ' ') : trans;
+  }
+
+  const translateEnvVal = (val: string) => {
+    if (typeof val !== 'string') return val;
+    let v = val;
+    if (val.toLowerCase() === "loam") v = t("hero.val_loam") || v;
+    else if (val.toLowerCase() === "well-drained") v = t("hero.val_well_drained") || v;
+    
+    if (language.includes("Bengali")) v = v.replace(/\(range:/i, "(রেঞ্জ:");
+    else if (language.includes("Hindi")) v = v.replace(/\(range:/i, "(रेंज:");
+    return v;
+  }
+
+  const translateRecCategory = (cat: string) => {
+    if (language.includes("English")) return cat;
+    let c = cat;
+    if (c === "Temperature") c = t("hero.env_temperature");
+    if (c === "Humidity") c = t("hero.env_humidity");
+    if (c === "Soil pH") c = t("hero.env_ph");
+    if (c === "Soil Texture - Sand") c = `${t("hero.env_soil_texture")} - ${t("hero.env_sand")}`;
+    if (c === "Soil Texture - Clay") c = `${t("hero.env_soil_texture")} - ${t("hero.env_clay")}`;
+    if (c === "Organic Carbon") c = t("hero.env_organic_carbon");
+    if (c === "Nitrogen (N)") c = t("hero.env_nitrogen");
+    if (c === "Soil Texture") c = t("hero.env_soil_texture");
+    if (c === "Drainage") c = t("hero.env_drainage");
+    if (c === "General") c = language.includes("Bengali") ? "সাধারণ" : "सामान्य";
+    return c;
+  }
+
+  const translateMessage = (msg: string) => {
+    if (language.includes("English")) return msg;
+    const isBn = language.includes("Bengali");
+    let m = msg;
+    m = m.replace(/Temperature is ([\d.]+)°C below minimum \(([\d.]+)°C\)/i, isBn ? "তাপমাত্রা সর্বনিম্ন ($2°C) থেকে $1°C কম" : "तापमान न्यूनतम ($2°C) से $1°C कम है");
+    m = m.replace(/Temperature is ([\d.]+)°C above maximum \(([\d.]+)°C\)/i, isBn ? "তাপমাত্রা সর্বোচ্চ ($2°C) থেকে $1°C বেশি" : "तापमान अधिकतम ($2°C) से $1°C अधिक है");
+    m = m.replace(/Humidity is ([\d.]+)% below minimum \(([\d.]+)%\)/i, isBn ? "আর্দ্রতা সর্বনিম্ন ($2%) থেকে $1% কম" : "नमी न्यूनतम ($2%) से $1% कम है");
+    m = m.replace(/Humidity is ([\d.]+)% above maximum \(([\d.]+)%\)/i, isBn ? "আর্দ্রতা সর্বোচ্চ ($2%) থেকে $1% বেশি" : "नमी अधिकतम ($2%) से $1% अधिक है");
+    m = m.replace(/Sand content \(([\d.]+)%\) is below optimal range \(([\d.]+)-([\d.]+)%\)/i, isBn ? "বালির পরিমাণ ($1%) সর্বোত্তম সীমার ($2-$3%) নিচে" : "रेत की मात्रा ($1%) इष्टतम सीमा ($2-$3%) से नीचे है");
+    m = m.replace(/Sand content \(([\d.]+)%\) is above optimal range \(([\d.]+)-([\d.]+)%\)/i, isBn ? "বালির পরিমাণ ($1%) সর্বোত্তম সীমার ($2-$3%) উপরে" : "रेत की मात्रा ($1%) इष्टतम सीमा ($2-$3%) से ऊपर है");
+    m = m.replace(/Clay content \(([\d.]+)%\) is below optimal range \(([\d.]+)-([\d.]+)%\)/i, isBn ? "কাদামাটির পরিমাণ ($1%) সর্বোত্তম সীমার ($2-$3%) নিচে" : "चिकनी मिट्टी की मात्रा ($1%) इष्टतम सीमा ($2-$3%) से नीचे है");
+    m = m.replace(/Clay content \(([\d.]+)%\) is above optimal range \(([\d.]+)-([\d.]+)%\)/i, isBn ? "কাদামাটির পরিমাণ ($1%) সর্বোত্তম সীমার ($2-$3%) উপরে" : "चिकनी मिट्टी की मात्रा ($1%) इष्टतम सीमा ($2-$3%) से ऊपर है");
+    m = m.replace(/Organic carbon \(([\d.]+)%\) is above maximum \(([\d.]+)%\)/i, isBn ? "জৈব কার্বন ($1%) সর্বোচ্চ সীমার ($2%) উপরে" : "जैविक कार्बन ($1%) अधिकतम सीमा ($2%) से ऊपर है");
+    m = m.replace(/Organic carbon \(([\d.]+)%\) is below minimum \(([\d.]+)%\)/i, isBn ? "জৈব কার্বন ($1%) সর্বনিম্ন সীমার ($2%) নিচে" : "जैविक कार्बन ($1%) न्यूनतम सीमा ($2%) से नीचे है");
+    m = m.replace(/Nitrogen content is low \(([\d.]+)g\/kg\)/i, isBn ? "নাইট্রোজেনের পরিমাণ কম ($1g/kg)" : "नाइट्रोजन की मात्रा कम है ($1g/kg)");
+    m = m.replace(/Soil is too acidic \(pH ([\d.]+), minimum: ([\d.]+)\)/i, isBn ? "মাটি খুব অম্লীয় (pH $1, সর্বনিম্ন: $2)" : "मिट्टी बहुत अम्लीय है (pH $1, न्यूनतम: $2)");
+    m = m.replace(/Soil is too alkaline \(pH ([\d.]+), maximum: ([\d.]+)\)/i, isBn ? "মাটি খুব ক্ষারীয় (pH $1, সর্বোচ্চ: $2)" : "मिट्टी बहुत क्षारीय है (pH $1, अधिकतम: $2)");
+    
+    const textureMatch = m.match(/Ideal soil texture for (.+): (.+)/i);
+    if (textureMatch) {
+      return isBn ? `${tCrop(textureMatch[1])} এর জন্য আদর্শ মাটির গঠন: ${translateEnvVal(textureMatch[2])}` : `${tCrop(textureMatch[1])} के लिए आदर्श मिट्टी की बनावट: ${translateEnvVal(textureMatch[2])}`;
+    }
+    
+    const drainageMatch = m.match(/Drainage requirement: (.+)/i);
+    if (drainageMatch) {
+      return isBn ? `নিষ্কাশন প্রয়োজন: ${translateEnvVal(drainageMatch[1])}` : `जल निकासी की आवश्यकता: ${translateEnvVal(drainageMatch[1])}`;
+    }
+    
+    return m;
+  }
+
+  const translateAction = (act: string) => {
+    if (language.includes("English")) return act;
+    const isBn = language.includes("Bengali");
+    
+    const actions: Record<string, [string, string]> = {
+      "Use mulching, row covers, or greenhouse to increase temperature. Consider delaying planting until warmer weather.": [
+        "তাপমাত্রা বাড়াতে মালচিং, সারি কভার বা গ্রিনহাউস ব্যবহার করুন। উষ্ণ আবহাওয়া পর্যন্ত রোপণ বিলম্বিত করার কথা বিবেচনা করুন।",
+        "तापमान बढ़ाने के लिए मल्चिंग, रो कवर्स या ग्रीनहाउस का उपयोग करें।"
+      ],
+      "Increase irrigation frequency, use shade nets, apply mulch to cool soil. Consider heat-tolerant varieties.": [
+        "সেচের মাত্রা বাড়ান, ছায়া জাল ব্যবহার করুন, মাটি ঠান্ডা রাখতে মালচ প্রয়োগ করুন। তাপ-সহনশীল জাত বিবেচনা করুন।",
+        "सिंचाई की आवृत्ति बढ़ाएं, छाया जाल का उपयोग करें, मिट्टी को ठंडा करने के लिए मल्च लगाएं।"
+      ],
+      "Monitor temperature closely. Adjust planting time if possible for better yields.": [
+        "তাপমাত্রা নিবিড়ভাবে পর্যবেক্ষণ করুন। ভালো ফলনের জন্য সম্ভব হলে রোপণের সময় সামঞ্জস্য করুন।",
+        "तापमान की बारीकी से निगरानी करें।"
+      ],
+      "Increase irrigation frequency, use drip irrigation, or install misting systems to raise humidity.": [
+        "আর্দ্রতা বাড়াতে সেচের মাত্রা বাড়ান, ড্রিপ সেচ ব্যবহার করুন বা মিস্টিং সিস্টেম ইনস্টল করুন।",
+        "सिंचाई की आवृत्ति बढ़ाएं, ड्रिप सिंचाई का उपयोग करें।"
+      ],
+      "Improve air circulation, reduce irrigation, monitor for fungal diseases. Apply fungicides preventively.": [
+        "বায়ু চলাচল উন্নত করুন, সেচ কমান, ছত্রাকজনিত রোগের উপর নজর রাখুন। আগাম ছত্রাকনাশক প্রয়োগ করুন।",
+        "वायु संचार में सुधार करें, सिंचाई कम करें, फफूंद जनित रोगों की निगरानी करें।"
+      ],
+      "Apply agricultural lime at 2-4 tons/hectare. Retest soil after 3 months.": [
+        "প্রতি হেক্টরে ২-৪ টন কৃষিজ চুন প্রয়োগ করুন। ৩ মাস পর মাটি পুনরায় পরীক্ষা করুন।",
+        "कृषि चूना 2-4 टन/हेक्टेयर की दर से लगाएं।"
+      ],
+      "Apply elemental sulfur or organic compost. Add acidifying fertilizers like ammonium sulfate.": [
+        "মৌলিক সালফার বা জৈব সার প্রয়োগ করুন। অ্যামোনিয়াম সালফেটের মতো অম্লীয় সার যোগ করুন।",
+        "मौलिक सल्फर या जैविक खाद लगाएं।"
+      ],
+      "Add coarse sand to improve drainage and aeration. Consider raised beds.": [
+        "নিষ্কাশন এবং বায়ু চলাচল উন্নত করতে মোটা বালি যোগ করুন। উঁচু বেড তৈরি করার কথা বিবেচনা করুন।",
+        "जल निकासी और वातन में सुधार के लिए मोटी रेत मिलाएं।"
+      ],
+      "Add organic matter and clay to improve water retention. Use mulching to reduce water loss.": [
+        "জল ধরে রাখার ক্ষমতা বাড়াতে জৈব পদার্থ এবং কাদামাটি যোগ করুন। জলের ক্ষতি কমাতে মালচিং ব্যবহার করুন।",
+        "जल प्रतिधारण में सुधार के लिए जैविक पदार्थ और मिट्टी मिलाएं।"
+      ],
+      "Add clay or bentonite to improve nutrient retention. Incorporate compost for better structure.": [
+        "পুষ্টি ধরে রাখার ক্ষমতা বাড়াতে কাদামাটি বা বেন্টোনাইট যোগ করুন। ভালো গঠনের জন্য কম্পোস্ট মেশান।",
+        "पोषक तत्वों के प्रतिधारण में सुधार के लिए मिट्टी या बेंटोनाइट मिलाएं।"
+      ],
+      "Add sand and organic matter to improve drainage. Consider raised beds or ridge planting.": [
+        "নিষ্কাশন উন্নত করতে বালি এবং জৈব পদার্থ যোগ করুন। উঁচু বেড বা রিজ রোপণ বিবেচনা করুন।",
+        "जल निकासी में सुधार के लिए रेत और जैविक पदार्थ मिलाएं।"
+      ],
+      "Add compost, farmyard manure, or green manure. Apply 10-15 tons/hectare of well-decomposed organic matter.": [
+        "কম্পোস্ট, খামার সার বা সবুজ সার যোগ করুন। হেক্টর প্রতি ১০-১৫ টন সুপচা জৈব পদার্থ প্রয়োগ করুন।",
+        "खाद, फार्मयार्ड खाद या हरी खाद मिलाएं।"
+      ],
+      "Excellent organic matter content. Maintain current practices.": [
+        "জৈব পদার্থের পরিমাণ চমৎকার। বর্তমান পদ্ধতি বজায় রাখুন।",
+        "उत्कृष्ट जैविक पदार्थ सामग्री। वर्तमान प्रथाओं को बनाए रखें।"
+      ],
+      "Apply nitrogen fertilizers: Urea, Ammonium Sulfate, or organic sources like compost. Split application recommended.": [
+        "নাইট্রোজেন সার প্রয়োগ করুন: ইউরিয়া, অ্যামোনিয়াম সালফেট, বা কম্পোস্টের মতো জৈব উৎস। বিভক্ত প্রয়োগ সুপারিশ করা হয়।",
+        "नाइट्रोजन उर्वरक लगाएं: यूरिया, अमोनियम सल्फेट।"
+      ],
+      "Ensure soil matches this texture class for optimal growth.": [
+        "সর্বোত্তম বৃদ্ধির জন্য মাটি এই গঠন শ্রেণীর সাথে মেলে তা নিশ্চিত করুন।",
+        "सुनिश्चित करें कि इष्टतम वृद्धि के लिए मिट्टी इस बनावट वर्ग से मेल खाती है।"
+      ],
+      "Ensure proper drainage system matches crop requirements to prevent waterlogging or drought stress.": [
+        "জলাবদ্ধতা বা খরার চাপ রোধ করতে ফসলের প্রয়োজনীয়তার সাথে সঠিক নিষ্কাশন ব্যবস্থা মেলে তা নিশ্চিত করুন।",
+        "जलभराव या सूखे के तनाव को रोकने के लिए उचित जल निकासी प्रणाली सुनिश्चित करें।"
+      ],
+      "Continue current management practices. Monitor regularly and maintain soil health.": [
+        "বর্তমান ব্যবস্থাপনা পদ্ধতি চালিয়ে যান। নিয়মিত নজর রাখুন এবং মাটির স্বাস্থ্য বজায় রাখুন।",
+        "वर्तमान प्रबंधन प्रथाओं को जारी रखें। नियमित निगरानी करें और मिट्टी के स्वास्थ्य को बनाए रखें।"
+      ]
+    };
+
+    if (actions[act]) {
+      return isBn ? actions[act][0] : actions[act][1];
+    }
+    
+    return act;
+  }
 
   const [location, setLocation] = useState<string>("")
   const [isDetecting, setIsDetecting] = useState(false)
@@ -464,7 +618,7 @@ export function HeroSection() {
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Search className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="truncate">{selectedCrop || t("hero.choose_crop")}</span>
+                      <span className="truncate">{selectedCrop ? tCrop(selectedCrop) : t("hero.choose_crop")}</span>
                     </div>
                   </div>
                   
@@ -495,7 +649,7 @@ export function HeroSection() {
                                   : 'text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-green-700 dark:hover:text-green-400'
                               }`}
                             >
-                              {crop}
+                              {tCrop(crop)}
                             </div>
                           ))}
                         </div>
@@ -603,8 +757,8 @@ export function HeroSection() {
                   <div className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
                     {Object.entries(recommendations.optimal_conditions).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
-                        <span className="capitalize">{key.replace(/_/g, ' ')}:</span>
-                        <span className="font-medium">{value as string}</span>
+                        <span className="capitalize">{translateEnvKey(key)}:</span>
+                        <span className="font-medium">{translateEnvVal(value as string)}</span>
                       </div>
                     ))}
                   </div>
@@ -615,8 +769,8 @@ export function HeroSection() {
                   <div className="space-y-2 text-sm text-green-800 dark:text-green-300">
                     {Object.entries(recommendations.current_conditions).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
-                        <span className="capitalize">{key.replace(/_/g, ' ')}:</span>
-                        <span className="font-medium">{value as string}</span>
+                        <span className="capitalize">{translateEnvKey(key)}:</span>
+                        <span className="font-medium">{translateEnvVal(value as string)}</span>
                       </div>
                     ))}
                   </div>
@@ -642,12 +796,12 @@ export function HeroSection() {
                           rec.priority === 'medium' ? 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300' :
                           'bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-300'
                         }`}>
-                          {rec.priority.toUpperCase()}
+                          {t(`hero.rec_${rec.priority.toLowerCase()}`) || rec.priority.toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{rec.category}</h4>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{rec.message}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 italic">💡 {rec.action}</p>
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{translateRecCategory(rec.category)}</h4>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{translateMessage(rec.message)}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 italic">💡 {translateAction(rec.action)}</p>
                         </div>
                       </div>
                     </div>

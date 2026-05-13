@@ -1,8 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from app.schemas.contact import ContactRequest, ContactResponse
-from app.database.db import get_db
-from app.models.contact import Contact
+from app.models.contact import ContactMessage
 from app.core.logger import logger
 from app.services.email_service import send_email
 
@@ -11,20 +9,18 @@ router = APIRouter()
 ADMIN_EMAIL = "noreplycropstation@gmail.com"
 
 @router.post("/contact", response_model=ContactResponse)
-def submit_contact(contact: ContactRequest, db: Session = Depends(get_db)):
+async def submit_contact(contact: ContactRequest):
     """Handle contact form submissions, save to DB, and send emails."""
     try:
         logger.info(f"Contact form submission from {contact.email}")
 
         # Save to database
-        new_msg = Contact(
+        new_msg = ContactMessage(
             name=contact.name,
             email=contact.email,
             message=contact.message
         )
-        db.add(new_msg)
-        db.commit()
-        db.refresh(new_msg)
+        await new_msg.insert()
 
         # --- Email 1: Notification to admin ---
         # Subject includes sender name so it's easy to spot in inbox

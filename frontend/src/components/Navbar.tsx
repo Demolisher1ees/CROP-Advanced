@@ -5,12 +5,14 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuthModalContext } from "@/components/AuthModalProvider"
 import { useLanguage } from "@/components/LanguageProvider"
+import { useState } from "react"
 
 export function Navbar() {
   const { data: session, status } = useSession()
   const { isNavGlow, setIsAuthModalOpen } = useAuthModalContext()
   const pathname = usePathname()
   const { t } = useLanguage()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
@@ -101,14 +103,98 @@ export function Navbar() {
 
           {/* Mobile hamburger */}
           <div className="md:hidden">
-            <button className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400"
+            >
+              {isMobileMenuOpen ? (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 absolute w-full left-0 shadow-lg">
+          <div className="px-4 pt-2 pb-4 space-y-1">
+            <Link 
+              href="/" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              {t("nav.home")}
+            </Link>
+            {session ? (
+              <Link 
+                href="/crops" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {t("nav.crops")}
+              </Link>
+            ) : (
+              <div className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50">
+                {t("nav.crops")}
+              </div>
+            )}
+            <Link 
+              href="/about" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              {t("nav.about")}
+            </Link>
+            <Link 
+              href="/contact" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              {t("nav.contact")}
+            </Link>
+            
+            <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-800">
+              {session ? (
+                <Link 
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)} 
+                  className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {session.user?.image ? (
+                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-xs font-bold text-green-700">
+                        {session.user?.name?.charAt(0).toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-base font-medium text-gray-900 dark:text-white">
+                    {session.user?.name || "Profile"}
+                  </span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full text-center text-white px-6 py-2 rounded-lg font-medium transition-all btn-3d btn-3d-primary"
+                >
+                  {t("nav.get_started")}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

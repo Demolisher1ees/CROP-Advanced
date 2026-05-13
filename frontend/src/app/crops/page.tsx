@@ -15,7 +15,7 @@ import { useLanguage } from "@/components/LanguageProvider"
 
 /* ─── Types ─── */
 interface Crop {
-  id: number
+  id: string
   crop_name: string
   location: string
   temperature?: number
@@ -30,7 +30,7 @@ interface WeatherInfo {
   conditions: string
   wind_speed: number
   location?: string
-  forecast: { day: string; temp: number; conditions: string }[]
+  forecast: { dt: number; temp: number; conditions: string }[]
 }
 interface FertResult {
   urea: number; dap: number; mop: number
@@ -41,6 +41,7 @@ interface YieldResult { crop: string; estYield: number; unit: string; grade: str
 
 /* ─── Static Data ─── */
 const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s
+const getCropKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/_$/, '')
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 const CROPS = [
@@ -85,7 +86,14 @@ const YIELDS: Record<string, number> = {
 export default function CropsOverviewPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const dateLocale = language.includes("Bengali") ? "bn-IN" : language.includes("Hindi") ? "hi-IN" : "en-US"
+
+  const tCrop = (name: string) => {
+    if (!name) return "";
+    const translated = t(`crop_names.${getCropKey(name)}`);
+    return translated.startsWith("crop_names.") ? name : translated;
+  }
 
   // core state
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -139,9 +147,24 @@ export default function CropsOverviewPage() {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
+
+  // Lock body scroll when modals are open
+  useEffect(() => {
+    if (isAddModalOpen || fertOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "unset"
+    }
+    return () => { document.body.style.overflow = "unset" }
+  }, [isAddModalOpen, fertOpen])
+
   useEffect(() => {
     if (status === "authenticated") { fetchCrops(); fetchWeather() }
   }, [status])
+
+  useEffect(() => {
+    if (status === "authenticated" && !isLoadingCrops) { fetchWeather() }
+  }, [language])
 
   /* ─── Data fetching ─── */
   const fetchCrops = async () => {
@@ -165,14 +188,15 @@ export default function CropsOverviewPage() {
         )
         lat = pos.coords.latitude; lon = pos.coords.longitude
       } catch { console.warn("Geolocation unavailable, using default") }
+      const langParam = language.includes("Bengali") ? "bn" : language.includes("Hindi") ? "hi" : "en";
       const base = `https://api.openweathermap.org/data/2.5`
-      const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+      const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${langParam}`
       const [curRes, fcastRes] = await Promise.all([
         fetch(`${base}/weather?${params}`), fetch(`${base}/forecast?${params}`)
       ])
       if (!curRes.ok) throw new Error(`Weather API error: ${curRes.status}`)
       const cur = await curRes.json()
-      const forecast: { day: string; temp: number; conditions: string }[] = []
+      const forecast: { dt: number; temp: number; conditions: string }[] = []
       if (fcastRes.ok) {
         const fdata = await fcastRes.json()
         const todayStr = new Date().toDateString(); const seen = new Set<string>()
@@ -180,7 +204,7 @@ export default function CropsOverviewPage() {
           const date = new Date(item.dt * 1000); const dayStr = date.toDateString()
           if (dayStr === todayStr || seen.has(dayStr)) continue
           seen.add(dayStr)
-          forecast.push({ day: seen.size === 1 ? "Tomorrow" : date.toLocaleDateString("en-US", { weekday: "short" }), temp: Math.round(item.main.temp * 10) / 10, conditions: capitalize(item.weather[0].description) })
+          forecast.push({ dt: item.dt * 1000, temp: Math.round(item.main.temp * 10) / 10, conditions: capitalize(item.weather[0].description) })
           if (seen.size >= 3) break
         }
       }
@@ -213,7 +237,7 @@ export default function CropsOverviewPage() {
   }
 
   /* ─── Delete Crop ─── */
-  const handleDeleteCrop = async (id: number) => {
+  const handleDeleteCrop = async (id: string) => {
     try {
       const res = await fetch(`${API_URL}/api/crops/${id}`, { method: "DELETE" })
       if (res.ok) {
@@ -297,7 +321,7 @@ export default function CropsOverviewPage() {
   }
   const greeting = () => {
     const h = currentTime.getHours()
-    if (h < 12) return "Good morning"; if (h < 17) return "Good afternoon"; return "Good evening"
+    if (h < 12) return t("crops.good_morning"); if (h < 17) return t("crops.good_afternoon"); return t("crops.good_evening")
   }
 
   // Filtered crops
@@ -334,7 +358,7 @@ export default function CropsOverviewPage() {
             <div>
               <h1 className="text-2xl font-bold text-white">{greeting()}, {firstName}! 👋</h1>
               <p className="text-white/80 text-sm mt-1">
-                {currentTime.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                {currentTime.toLocaleDateString(dateLocale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
               </p>
             </div>
             <div className="flex gap-3 flex-wrap">
@@ -397,10 +421,10 @@ export default function CropsOverviewPage() {
           {/* ── Stats Row ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Total Crops", value: stats.total, icon: Sprout, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
-              { label: "Healthy", value: stats.healthy, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-              { label: "Needs Attention", value: stats.warning, icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
-              { label: "Critical", value: stats.critical, icon: Activity, color: "text-red-600", bg: "bg-red-50 dark:bg-red-900/20" },
+              { label: t("crops.total_crops"), value: stats.total, icon: Sprout, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
+              { label: t("crops.healthy"), value: stats.healthy, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+              { label: t("crops.needs_attention"), value: stats.warning, icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
+              { label: t("crops.critical"), value: stats.critical, icon: Activity, color: "text-red-600", bg: "bg-red-50 dark:bg-red-900/20" },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 flex items-center gap-4">
                 <div className={`${bg} p-3 rounded-xl`}><Icon className={`${color} w-6 h-6`} /></div>
@@ -455,7 +479,7 @@ export default function CropsOverviewPage() {
                               : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                             }`}
                         >
-                          {f === "all" ? "All" : f}
+                          {t(`crops.filter_${f}`)}
                         </button>
                       ))}
                     </div>
@@ -491,7 +515,7 @@ export default function CropsOverviewPage() {
                             <Leaf size={16} className="text-green-600 dark:text-green-400" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate">{crop.crop_name}</p>
+                            <p className="font-medium text-gray-900 dark:text-white truncate">{tCrop(crop.crop_name)}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
                               <MapPin size={11} /> {crop.location}
                             </p>
@@ -504,7 +528,7 @@ export default function CropsOverviewPage() {
                             </div>
                           )}
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${getRiskColor(crop.risk_level)}`}>
-                            {getRiskIcon(crop.risk_level)} {crop.risk_level}
+                            {getRiskIcon(crop.risk_level)} {t(`crops.risk_${crop.risk_level?.toLowerCase() || 'low'}`)}
                           </span>
                           <button className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-full transition-all duration-200" title="Delete Crop" onClick={(e) => { e.stopPropagation(); handleDeleteCrop(crop.id); }}>
                             <Trash2 size={18} />
@@ -524,7 +548,7 @@ export default function CropsOverviewPage() {
                 </div>
                 <div className="p-6">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                    Estimate your expected harvest based on crop type and field size.
+                    {t("crops.yield_estimator_desc")}
                   </p>
                   {/* Row 1: Crop + Field size + Unit */}
                   <div className="flex flex-col sm:flex-row gap-3 mb-3">
@@ -537,7 +561,7 @@ export default function CropsOverviewPage() {
                         <div className="flex items-center gap-2 overflow-hidden">
                           <Search size={14} className="text-gray-400 shrink-0" />
                           <span className={`truncate ${yieldCrop ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                            {yieldCrop || "Select crop…"}
+                            {yieldCrop ? tCrop(yieldCrop) : t("crops.select_crop")}
                           </span>
                         </div>
                       </div>
@@ -563,7 +587,7 @@ export default function CropsOverviewPage() {
                                       : 'text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-green-700 dark:hover:text-green-400'
                                     }`}
                                 >
-                                  {crop}
+                                  {tCrop(crop)}
                                 </div>
                               ))}
                             </div>
@@ -577,7 +601,7 @@ export default function CropsOverviewPage() {
                       <div className="relative w-32 shrink-0">
                         <input
                           type="number" min="0.1" step="0.1"
-                          placeholder="Field size"
+                          placeholder={t("crops.field_size")}
                           value={yieldSize}
                           onChange={e => { setYieldSize(e.target.value); setYieldResult(null) }}
                           className="fert-input w-full pl-3 pr-8 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-amber-400"
@@ -638,16 +662,16 @@ export default function CropsOverviewPage() {
                     disabled={!yieldCrop || !yieldSize}
                     className="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed mb-4"
                   >
-                    Calculate Yield
+                    {t("crops.calculate_yield")}
                   </button>
                   {yieldResult && (
                     <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-amber-900 dark:text-amber-200">{yieldResult.crop}</p>
+                        <p className="font-semibold text-amber-900 dark:text-amber-200">{tCrop(yieldResult.crop)}</p>
                         <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">{yieldResult.grade}</span>
                       </div>
                       <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">{yieldResult.estYield} <span className="text-lg font-normal">{yieldResult.unit}</span></p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Estimated yield for {yieldSize} {yieldUnit === "hectares" ? "hectare(s)" : "acre(s)"} under good conditions</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{yieldUnit === "hectares" ? t("crops.estimated_yield_for_ha") : t("crops.estimated_yield_for_ac")}{yieldSize} {yieldUnit === "hectares" ? t("crops.hectares") : t("crops.acres")}{t("crops.estimated_yield_under_good_conditions")}</p>
                     </div>
                   )}
                 </div>
@@ -660,7 +684,7 @@ export default function CropsOverviewPage() {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm text-white p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold flex items-center gap-2">
-                    <CloudSun size={18} /> Weather
+                    <CloudSun size={18} /> {t("crops.weather")}
                     {weather?.location && (
                       <span className="text-xs font-normal text-blue-200 flex items-center gap-1">
                         <MapPin size={11} />{weather.location}
@@ -680,20 +704,20 @@ export default function CropsOverviewPage() {
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div className="bg-white/15 rounded-lg p-3">
                         <Droplets size={16} className="mb-1 text-blue-100" />
-                        <p className="text-xs text-blue-100">Humidity</p>
+                        <p className="text-xs text-blue-100">{t("crops.humidity")}</p>
                         <p className="font-semibold">{weather.humidity}%</p>
                       </div>
                       <div className="bg-white/15 rounded-lg p-3">
                         <Wind size={16} className="mb-1 text-blue-100" />
-                        <p className="text-xs text-blue-100">Wind</p>
+                        <p className="text-xs text-blue-100">{t("crops.wind")}</p>
                         <p className="font-semibold">{weather.wind_speed} km/h</p>
                       </div>
                     </div>
                     {weather.forecast && (
                       <div className="space-y-2">
-                        {weather.forecast.map(f => (
-                          <div key={f.day} className="flex items-center justify-between text-sm bg-white/10 rounded-lg px-3 py-2">
-                            <span className="text-blue-100">{f.day}</span>
+                        {weather.forecast.map((f, i) => (
+                          <div key={f.dt} className="flex items-center justify-between text-sm bg-white/10 rounded-lg px-3 py-2">
+                            <span className="text-blue-100">{i === 0 ? t("crops.tomorrow") : new Date(f.dt).toLocaleDateString(dateLocale, { weekday: "short" })}</span>
                             <span className="font-medium">{f.temp}°C</span>
                             <span className="text-blue-200 text-xs">{f.conditions}</span>
                           </div>
@@ -702,21 +726,21 @@ export default function CropsOverviewPage() {
                     )}
                   </>
                 ) : (
-                  <p className="text-blue-100 text-sm py-4 text-center">Weather data unavailable</p>
+                  <p className="text-blue-100 text-sm py-4 text-center">{t("crops.weather_unavailable")}</p>
                 )}
               </div>
 
               {/* Quick Actions */}
               <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
                 <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <TrendingUp size={18} className="text-green-600" /> Quick Actions
+                  <TrendingUp size={18} className="text-green-600" /> {t("crops.quick_actions")}
                 </h2>
                 <div className="space-y-2">
                   {[
-                    { label: "Get Crop Recommendations", href: "/", icon: Sprout, color: "text-green-600 bg-green-50 dark:bg-green-900/20" },
-                    { label: "My Profile & Settings", href: "/profile", icon: User, color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
-                    { label: "About FarmIQ", href: "/about", icon: BarChart3, color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
-                    { label: "Contact Support", href: "/contact", icon: Activity, color: "text-orange-600 bg-orange-50 dark:bg-orange-900/20" },
+                    { label: t("crops.qa_get_recs"), href: "/", icon: Sprout, color: "text-green-600 bg-green-50 dark:bg-green-900/20" },
+                    { label: t("crops.qa_profile"), href: "/profile", icon: User, color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20" },
+                    { label: t("crops.qa_about"), href: "/about", icon: BarChart3, color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
+                    { label: t("crops.qa_contact"), href: "/contact", icon: Activity, color: "text-orange-600 bg-orange-50 dark:bg-orange-900/20" },
                   ].map(({ label, href, icon: Icon, color }) => (
                     <Link key={label} href={href}>
                       <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group">
@@ -736,14 +760,14 @@ export default function CropsOverviewPage() {
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
               <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
                 <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Activity size={18} className="text-green-600" /> Crop Status Overview
+                  <Activity size={18} className="text-green-600" /> {t("crops.crop_status_overview")}
                 </h2>
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <span>Overall Farm Health</span>
+                  <span>{t("crops.overall_farm_health")}</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {Math.round((stats.healthy / stats.total) * 100)}% Healthy
+                    {Math.round((stats.healthy / stats.total) * 100)}{t("crops.percent_healthy")}
                   </span>
                 </div>
                 <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 overflow-hidden flex">
@@ -752,9 +776,9 @@ export default function CropsOverviewPage() {
                   {stats.critical > 0 && <div className="bg-red-500 h-3 transition-all" style={{ width: `${(stats.critical / stats.total) * 100}%` }} />}
                 </div>
                 <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Healthy ({stats.healthy})</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Warning ({stats.warning})</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Critical ({stats.critical})</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> {t("crops.healthy_label")} ({stats.healthy})</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> {t("crops.warning_label")} ({stats.warning})</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {t("crops.critical_label")} ({stats.critical})</span>
                 </div>
               </div>
             </div>
@@ -765,9 +789,9 @@ export default function CropsOverviewPage() {
           ADD CROP MODAL
       ══════════════════════════════════════════════════ */}
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsAddModalOpen(false)}>
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm pt-20" onClick={() => setIsAddModalOpen(false)}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm fixed" />
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 mb-10" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><Plus size={18} className="text-green-600" /> {t("crops.add_crop")}</h2>
                 <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={20} /></button>
@@ -777,8 +801,8 @@ export default function CropsOverviewPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t("crops.crop_name")}</label>
                   <div className="relative">
                     <select value={newCropName} onChange={e => setNewCropName(e.target.value)} className="w-full pl-3 pr-8 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-green-500">
-                      <option value="">Select a crop…</option>
-                      {CROPS.map(c => <option key={c}>{c}</option>)}
+                      <option value="">{t("crops.select_a_crop")}</option>
+                      {CROPS.map(c => <option key={c} value={c}>{tCrop(c)}</option>)}
                     </select>
                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
@@ -805,33 +829,39 @@ export default function CropsOverviewPage() {
           FERTILIZER CALCULATOR MODAL
       ══════════════════════════════════════════════════ */}
         {fertOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => { setFertOpen(false); setFertResult(null) }}>
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <FlaskConical size={18} className="text-amber-500" /> {t("crops.fertilizer_calc")}
-                </h2>
-                <button onClick={() => { setFertOpen(false); setFertResult(null) }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={20} /></button>
+          <div className="fixed inset-0 z-[100] flex justify-center items-start p-4 overflow-y-auto bg-black/60 backdrop-blur-sm pt-20" onClick={() => { setFertOpen(false); setFertResult(null) }}>
+            <div className="relative bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl w-full max-w-md p-6 mb-10" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                    <FlaskConical size={18} className="text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                    {t("crops.fertilizer_calc")}
+                  </h2>
+                </div>
+                <button onClick={() => { setFertOpen(false); setFertResult(null) }} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors">
+                  <X size={18} />
+                </button>
               </div>
 
               <div className="space-y-4">
                 {/* Crop + Field Size */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="min-w-0">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Crop</label>
+                    <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">{t("crops.crop_label")}</label>
 
                     {/* Custom glassmorphism dropdown — fixed-positioned to escape modal overflow */}
                     <div className="relative" ref={fertCropTriggerRef}>
                       {/* Trigger */}
                       <div
                         onClick={() => setIsFertCropOpen(!isFertCropOpen)}
-                        className="w-full flex items-center justify-between pl-3 pr-9 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm cursor-pointer select-none transition-colors hover:border-amber-400"
+                        className="w-full flex items-center justify-between pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-xs cursor-pointer select-none transition-colors hover:border-amber-400"
                       >
                         <div className="flex items-center gap-2 overflow-hidden">
                           <Search size={14} className="text-gray-400 shrink-0" />
                           <span className={`truncate ${fertCrop ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                            {fertCrop || "Select crop…"}
+                            {fertCrop ? tCrop(fertCrop) : t("crops.select_crop") || "Select crop…"}
                           </span>
                         </div>
                       </div>
@@ -857,7 +887,7 @@ export default function CropsOverviewPage() {
                                       : 'text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-green-700 dark:hover:text-green-400'
                                     }`}
                                 >
-                                  {crop}
+                                  {tCrop(crop)}
                                 </div>
                               ))}
                             </div>
@@ -868,14 +898,14 @@ export default function CropsOverviewPage() {
                   </div>
 
                   <div className="min-w-0">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Field Size</label>
-                    <div className="flex gap-1.5">
+                    <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">{t("crops.field_size")}</label>
+                    <div className="flex gap-1">
                       <div className="relative flex-1 min-w-0 w-0">
                         <input
-                          type="number" min="0.1" step="0.1" placeholder="Size"
+                          type="number" min="0.1" step="0.1" placeholder={t("crops.size_placeholder")}
                           value={fertSize}
                           onChange={e => { setFertSize(e.target.value); setFertResult(null) }}
-                          className="fert-input w-full pl-3 pr-8 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                          className="fert-input w-full pl-2 pr-6 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-xs"
                         />
                         <div className="absolute right-2 inset-y-0 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
                           <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-200 transition-colors leading-none" onClick={() => setFertSize(v => String(Math.round((parseFloat(v || '0') + 0.1) * 10) / 10))}>
@@ -891,13 +921,13 @@ export default function CropsOverviewPage() {
                       <div className="relative shrink-0 w-16" ref={fertUnitTriggerRef}>
                         <div
                           onClick={() => setIsFertUnitOpen(!isFertUnitOpen)}
-                          className="w-full flex items-center justify-between pl-3 pr-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm cursor-pointer select-none transition-colors hover:border-amber-400"
+                          className="w-full flex items-center justify-between pl-2 pr-0.5 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-xs cursor-pointer select-none transition-colors hover:border-amber-400"
                         >
                           <span className="text-gray-900 dark:text-white font-medium">
                             {fertUnit === "hectares" ? "ha" : "ac"}
                           </span>
                           <ChevronDown
-                            size={12}
+                            size={11}
                             className={`text-gray-400 transition-transform duration-200 ${isFertUnitOpen ? 'rotate-180' : ''}`}
                           />
                         </div>
@@ -932,17 +962,17 @@ export default function CropsOverviewPage() {
 
                 {/* Current Soil NPK */}
                 <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                    Current Soil Nutrients <span className="font-normal text-gray-400">(leave blank to use defaults)</span>
+                  <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                    {t("crops.current_soil_nutrients")} <span className="font-normal text-gray-400 text-[10px]">{t("crops.leave_blank_defaults")}</span>
                   </p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {[
-                      { label: "Nitrogen (N)", hint: "g/kg", val: fertN, set: setFertN },
-                      { label: "Phosphorus (P)", hint: "mg/kg", val: fertP, set: setFertP },
-                      { label: "Potassium (K)", hint: "mg/kg", val: fertK, set: setFertK },
+                      { label: t("crops.nitrogen_label"), hint: "g/kg", val: fertN, set: setFertN },
+                      { label: t("crops.phosphorus_label"), hint: "mg/kg", val: fertP, set: setFertP },
+                      { label: t("crops.potassium_label"), hint: "mg/kg", val: fertK, set: setFertK },
                     ].map(({ label, hint, val, set }) => (
                       <div key={label}>
-                        <label className="block text-xs text-gray-500 dark:text-gray-500 mb-1">{label} <span className="text-gray-400">({hint})</span></label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">{label} <span className="text-gray-400">({hint})</span></label>
                         <div className="relative">
                           <input
                             type="number" min="0" step="0.1" placeholder="0"
@@ -964,8 +994,8 @@ export default function CropsOverviewPage() {
                   </div>
                 </div>
 
-                <button onClick={calcFertilizer} disabled={!fertCrop || !fertSize} className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <Calculator size={16} /> Calculate Fertilizer Requirements
+                <button onClick={calcFertilizer} disabled={!fertCrop || !fertSize} className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <Calculator size={14} /> {t("crops.calc_fert_req")}
                 </button>
 
                 {/* Results */}
@@ -973,34 +1003,33 @@ export default function CropsOverviewPage() {
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
                       <CheckCircle size={16} className="text-green-500" />
-                      <span className="font-semibold text-gray-900 dark:text-white text-sm">Recommended Fertilizers for {fertCrop}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white text-sm">{t("crops.recommended_fert")} {tCrop(fertCrop)}</span>
                     </div>
 
                     {/* Fertilizer amounts */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2">
                       {[
-                        { name: "Urea", amount: fertResult.urea, desc: "46% N", color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300" },
-                        { name: "DAP", amount: fertResult.dap, desc: "46% P₂O₅", color: "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300" },
-                        { name: "MOP", amount: fertResult.mop, desc: "60% K₂O", color: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300" },
+                        { name: "Urea", amount: fertResult.urea, desc: "46% N", color: "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-300" },
+                        { name: "DAP", amount: fertResult.dap, desc: "46% P₂O₅", color: "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300" },
+                        { name: "MOP", amount: fertResult.mop, desc: "60% K₂O", color: "bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800 text-orange-700 dark:text-orange-300" },
                       ].map(({ name, amount, desc, color }) => (
-                        <div key={name} className={`p-3 rounded-xl border ${color}`}>
-                          <p className="text-xs font-medium opacity-75">{name}</p>
-                          <p className="text-xl font-bold mt-0.5">{amount} <span className="text-xs font-normal">kg</span></p>
-                          <p className="text-xs opacity-60 mt-0.5">{desc}</p>
+                        <div key={name} className={`p-2 rounded-lg border ${color}`}>
+                          <p className="text-[10px] font-medium opacity-75">{name}</p>
+                          <p className="text-lg font-bold mt-0.5">{amount} <span className="text-[10px] font-normal">kg</span></p>
                         </div>
                       ))}
                     </div>
 
                     {/* Nutrient deficits */}
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">Nutrient Deficit (kg/total field)</p>
-                      <p>🔵 N deficit: <span className="font-semibold text-gray-900 dark:text-white">{fertResult.nDeficit} kg</span></p>
-                      <p>🟣 P deficit: <span className="font-semibold text-gray-900 dark:text-white">{fertResult.pDeficit} kg</span></p>
-                      <p>🟠 K deficit: <span className="font-semibold text-gray-900 dark:text-white">{fertResult.kDeficit} kg</span></p>
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">{t("crops.nutrient_deficit")}</p>
+                      <p>🔵 {t("crops.n_deficit")}: <span className="font-semibold text-gray-900 dark:text-white">{fertResult.nDeficit} kg</span></p>
+                      <p>🟣 {t("crops.p_deficit")}: <span className="font-semibold text-gray-900 dark:text-white">{fertResult.pDeficit} kg</span></p>
+                      <p>🟠 {t("crops.k_deficit")}: <span className="font-semibold text-gray-900 dark:text-white">{fertResult.kDeficit} kg</span></p>
                     </div>
 
-                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">
-                      * Estimates based on standard agronomic requirements. Apply in split doses for best results. Consult a local agronomist for field-specific advice.
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 italic">
+                      {t("crops.fert_disclaimer")}
                     </p>
                   </div>
                 )}

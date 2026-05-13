@@ -1,6 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
-from app.database.db import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, ForgotPasswordRequest, ResetPasswordRequest, CheckEmailResponse, GoogleAuthRequest
 from app.core.security import verify_password, get_password_hash, create_access_token
@@ -12,15 +10,16 @@ from app.services.email_service import send_email
 import os
 from app.core.logger import logger
 from app.core.config import settings
+from app.models.crop import Crop
 
 router = APIRouter()
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
+async def signup(user_data: UserCreate):
     """Register a new user"""
     # Check if user already exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    existing_user = await User.find_one(User.email == user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -40,9 +39,7 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
         is_verified=False
     )
     
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await new_user.insert()
     
     # Send verification email
     if settings.SMTP_HOST:
@@ -63,10 +60,10 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 @limiter.limit("5/minute")
-async def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db)):
+async def login(request: Request, user_data: UserLogin):
     """Authenticate user and return JWT token"""
     # Find user by email
-    user = db.query(User).filter(User.email == user_data.email).first()
+    user = await User.find_one(User.email == user_data.email)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -88,12 +85,6 @@ async def login(request: Request, user_data: UserLogin, db: Session = Depends(ge
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
-    # Check email verification bypassed for development
-    # if not user.is_verified:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Email address not verified"
-    #     )
     
     # Create access token with user info
     access_token_expires = timedelta(minutes=30)
@@ -101,7 +92,7 @@ async def login(request: Request, user_data: UserLogin, db: Session = Depends(ge
         data={
             "sub": user.email,
             "name": f"{user.first_name} {user.last_name}",
-            "user_id": user.id
+            "user_id": str(user.id)
         },
         expires_delta=access_token_expires
     )
@@ -114,27 +105,27 @@ async def login(request: Request, user_data: UserLogin, db: Session = Depends(ge
 
 
 @router.get("/verify-email")
-def verify_email(token: str, db: Session = Depends(get_db)):
+async def verify_email(token: str):
     """Verify user email address using token"""
-    user = db.query(User).filter(User.verification_token == token).first()
+    user = await User.find_one(User.verification_token == token)
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
     user.is_verified = True
     user.verification_token = None
-    db.commit()
+    await user.save()
     return {"message": "Email verified successfully"}
 
 
 @router.post("/forgot-password")
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, body: ForgotPasswordRequest):
     """Initiate password reset request"""
-    user = db.query(User).filter(User.email == request.email).first()
+    user = await User.find_one(User.email == body.email)
     if user:
         token = secrets.token_urlsafe(48)
         expires = datetime.now(timezone.utc) + timedelta(minutes=15)
         reset = PasswordReset(user_id=user.id, token=token, expires_at=expires)
-        db.add(reset)
-        db.commit()
+        await reset.insert()
         
         # Send reset email
         if settings.SMTP_HOST:
@@ -154,40 +145,38 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
 
 @router.post("/reset-password")
-def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+async def reset_password(request: ResetPasswordRequest):
     """Complete password reset using token"""
-    record = db.query(PasswordReset).filter(PasswordReset.token == request.token).first()
+    record = await PasswordReset.find_one(PasswordReset.token == request.token)
     if not record or record.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
-    user = db.query(User).filter(User.id == record.user_id).first()
+    user = await User.get(record.user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
     user.hashed_password = get_password_hash(request.new_password)
-    db.delete(record)
-    db.commit()
+    await user.save()
+    await record.delete()
     return {"message": "Password has been reset successfully."}
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user(db: Session = Depends(get_db)):
+async def get_current_user():
     """Get current user profile"""
-    # This would normally use JWT token validation
-    # For now, returning a placeholder
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail="Token validation not implemented yet"
     )
 
 @router.get("/check-email", response_model=CheckEmailResponse)
-def check_email(email: str, db: Session = Depends(get_db)):
+async def check_email(email: str):
     """Check if an email is already registered"""
-    user = db.query(User).filter(User.email == email).first()
+    user = await User.find_one(User.email == email)
     return {"exists": user is not None}
 
 @router.post("/google", response_model=Token)
-async def google_auth(user_data: GoogleAuthRequest, db: Session = Depends(get_db)):
+async def google_auth(user_data: GoogleAuthRequest):
     """Authenticate or register user via Google OAuth"""
-    user = db.query(User).filter(User.email == user_data.email).first()
+    user = await User.find_one(User.email == user_data.email)
     
     if not user:
         # Generate a random secure password for the Google user
@@ -201,9 +190,7 @@ async def google_auth(user_data: GoogleAuthRequest, db: Session = Depends(get_db
             hashed_password=hashed_password,
             is_verified=True  # Google users are automatically verified
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        await user.insert()
     elif not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -215,7 +202,7 @@ async def google_auth(user_data: GoogleAuthRequest, db: Session = Depends(get_db
         data={
             "sub": user.email,
             "name": f"{user.first_name} {user.last_name}",
-            "user_id": user.id
+            "user_id": str(user.id)
         },
         expires_delta=access_token_expires
     )
@@ -228,7 +215,7 @@ async def google_auth(user_data: GoogleAuthRequest, db: Session = Depends(get_db
 
 
 @router.delete("/delete-account")
-async def delete_account(request: Request, db: Session = Depends(get_db)):
+async def delete_account(request: Request):
     """Permanently delete a user account and all associated data."""
     try:
         body = await request.json()
@@ -239,20 +226,18 @@ async def delete_account(request: Request, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
 
-    user = db.query(User).filter(User.email == email).first()
+    user = await User.find_one(User.email == email)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Delete associated password resets
-    db.query(PasswordReset).filter(PasswordReset.user_id == user.id).delete()
+    await PasswordReset.find(PasswordReset.user_id == user.id).delete()
 
     # Delete associated crops
-    from app.models.crop import Crop
-    db.query(Crop).filter(Crop.user_id == user.id).delete()
+    await Crop.find(Crop.user_id == user.id).delete()
 
     # Delete the user
-    db.delete(user)
-    db.commit()
+    await user.delete()
 
     logger.info(f"Account deleted for: {email}")
     return {"message": "Account deleted successfully"}

@@ -97,9 +97,9 @@ const ContactSection = () => {
 
   const infoCards = [
     { icon: Mail,   title: t("contact.email_label"),    primary: "noreplycropstation@gmail.com", sub: t("contact.email_response_time"), href: "mailto:noreplycropstation@gmail.com" },
-    { icon: MapPin, title: t("contact.location_label"), primary: "Kolkata, India",               sub: t("contact.office_note") },
-    { icon: Clock,  title: t("contact.quick_response"), primary: "Within 24 hours",              sub: t("contact.quick_response_desc") },
-    { icon: Shield, title: "Data Security",             primary: "100% Encrypted",               sub: "Your data is always private and never shared with third parties." },
+    { icon: MapPin, title: t("contact.location_label"), primary: t("contact.kolkata"),               sub: t("contact.office_note") },
+    { icon: Clock,  title: t("contact.quick_response"), primary: t("contact.within_24_hours"),              sub: t("contact.quick_response_desc") },
+    { icon: Shield, title: t("contact.data_security_title"),             primary: t("contact.data_security_primary"),               sub: t("contact.data_security_sub") },
   ]
 
   return (
@@ -214,12 +214,7 @@ const ContactSection = () => {
 }
 
 /* ─── FAQ ─── */
-const faqs = [
-  { question: "How accurate are the crop recommendations?", answer: "Our recommendations are based on real-time soil and weather data combined with machine learning algorithms trained on extensive agricultural datasets, ensuring high accuracy and reliability." },
-  { question: "How often is the data updated?", answer: "Environmental data including weather conditions and soil metrics are updated every 30 minutes to provide you with the most current information for decision-making." },
-  { question: "Do I need special sensors or equipment?", answer: "No special equipment is required. Our system works using your location data and integrates with weather and soil APIs to provide comprehensive analysis without additional hardware." },
-  { question: "Is my data secure and private?", answer: "Yes, we take data security seriously. All information is encrypted and securely stored. We never share your personal data with third parties." },
-]
+const faqs = ["q1", "q2", "q3", "q4"];
 
 const FAQ = () => {
   const { t } = useLanguage()
@@ -235,13 +230,13 @@ const FAQ = () => {
           <p className="mt-3 text-lg text-gray-500 dark:text-gray-400">{t("contact.faq_subtitle")}</p>
         </div>
         <div className="space-y-3">
-          {faqs.map((faq, i) => (
+          {faqs.map((faqKey, i) => (
             <div key={i} className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
               <button
                 onClick={() => setOpen(open === i ? null : i)}
                 className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <span className="font-semibold text-gray-900 dark:text-white pr-4 text-base">{faq.question}</span>
+                <span className="font-semibold text-gray-900 dark:text-white pr-4 text-base">{t(`contact.faqs_list.${faqKey}.q`)}</span>
                 <ChevronDown
                   size={20}
                   className={`text-primary shrink-0 transition-transform duration-300 ${open === i ? "rotate-180" : ""}`}
@@ -249,7 +244,7 @@ const FAQ = () => {
               </button>
               <div className={`overflow-hidden transition-all duration-300 ${open === i ? "max-h-60" : "max-h-0"}`}>
                 <p className="px-6 pb-6 text-base text-gray-500 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-700 pt-4">
-                  {faq.answer}
+                  {t(`contact.faqs_list.${faqKey}.a`)}
                 </p>
               </div>
             </div>

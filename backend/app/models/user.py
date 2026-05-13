@@ -1,19 +1,19 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
-from sqlalchemy.sql import func
-from app.database.db import Base
+from datetime import datetime
+from typing import Optional
+from beanie import Document
+from pydantic import Field
 
+class User(Document):
+    email: str
+    first_name: str
+    last_name: str
+    hashed_password: str
+    is_active: bool = True
+    is_verified: bool = False
+    verification_token: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-    # email verification
-    is_verified = Column(Boolean, default=False)
-    verification_token = Column(String(128), unique=True, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    class Settings:
+        name = "users"
+        indexes = ["email", "verification_token"]

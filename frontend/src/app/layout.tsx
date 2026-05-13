@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { Suspense } from 'react'
 import './globals.css'
 import Providers from '@/components/Providers'
 import { AuthModalProvider } from '@/components/AuthModalProvider'
@@ -25,7 +26,9 @@ export default function RootLayout({
         <Providers>
           <LanguageProvider>
             <AuthModalProvider>
-              <AuthModal />
+              <Suspense fallback={null}>
+                <AuthModal />
+              </Suspense>
               <Navbar />
               {children}
             </AuthModalProvider>

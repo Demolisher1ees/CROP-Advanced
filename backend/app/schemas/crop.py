@@ -1,14 +1,14 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 from typing import Optional
 from datetime import datetime
-
+from beanie import PydanticObjectId
 
 class CropBase(BaseModel):
     crop_name: str
     location: str
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    user_id: Optional[int] = None
+    user_id: Optional[PydanticObjectId] = None
 
     @validator('crop_name', 'location', pre=True)
     def strip_strings(cls, v):
@@ -20,7 +20,7 @@ class CropCreate(CropBase):
 
 
 class CropResponse(CropBase):
-    id: int
+    id: PydanticObjectId
     temperature: Optional[float] = None
     soil_moisture: Optional[str] = None
     status: str = "Monitoring"

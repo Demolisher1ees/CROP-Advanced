@@ -27,7 +27,23 @@
     "score": "Score",
     "optimal_conditions": "Optimal Conditions",
     "current_conditions": "Current Conditions",
-    "recommendations_label": "Recommendations"
+    "recommendations_label": "Recommendations",
+    "env_temperature": "Temperature",
+    "env_humidity": "Humidity",
+    "env_ph": "pH",
+    "env_rainfall": "Rainfall",
+    "env_soil_texture": "Soil Texture",
+    "env_drainage": "Drainage",
+    "env_nitrogen": "Nitrogen",
+    "env_precipitation": "Precipitation",
+    "env_sand": "Sand",
+    "env_clay": "Clay",
+    "env_organic_carbon": "Organic Carbon",
+    "val_loam": "Loam",
+    "val_well_drained": "Well-drained",
+    "rec_high": "HIGH",
+    "rec_medium": "MEDIUM",
+    "rec_low": "LOW"
   },
   "about": {
     "hero_tag": "FarmIQ",
@@ -55,7 +71,128 @@
     "why_us_badge": "Why Us",
     "why_choose": "Why Choose FarmIQ?",
     "cta_title": "Start Optimizing Your Crop Health Today",
-    "cta_desc": "Join thousands of farmers using AI-powered insights to grow smarter, healthier crops."
+    "cta_desc": "Join thousands of farmers using AI-powered insights to grow smarter, healthier crops.",
+    "features_list": {
+      "f1": {
+        "title": "Real-Time Monitoring",
+        "desc": "Continuously track crop and environmental conditions with live data feeds."
+      },
+      "f2": {
+        "title": "AI Recommendations",
+        "desc": "Receive intelligent, data-backed crop care suggestions powered by machine learning."
+      },
+      "f3": {
+        "title": "Weather Integration",
+        "desc": "Live weather data ensures your crop plans adapt to current conditions."
+      },
+      "f4": {
+        "title": "Soil Health Analysis",
+        "desc": "Deep soil insights including pH, moisture, and nutrient composition."
+      },
+      "f5": {
+        "title": "Crop Care Suggestions",
+        "desc": "Actionable advice on irrigation, fertilization, shading, and pest control."
+      },
+      "f6": {
+        "title": "Location Intelligence",
+        "desc": "Geo-specific recommendations tailored to your region's conditions."
+      },
+      "f7": {
+        "title": "Scalable Backend",
+        "desc": "Fast, reliable FastAPI backend built for performance at any scale."
+      },
+      "f8": {
+        "title": "User-Friendly Dashboard",
+        "desc": "Clean, intuitive interface designed for farmers and professionals alike."
+      }
+    },
+    "overview_list": {
+      "o1": {
+        "title": "Real-Time Analysis",
+        "desc": "Live soil & weather monitoring"
+      },
+      "o2": {
+        "title": "AI-Driven Insights",
+        "desc": "ML-powered recommendations"
+      },
+      "o3": {
+        "title": "Location-Based",
+        "desc": "Geo-specific crop advice"
+      },
+      "o4": {
+        "title": "Instant Results",
+        "desc": "Actionable data in seconds"
+      }
+    },
+    "steps_list": {
+      "s1": {
+        "title": "Detect Location",
+        "desc": "Automatically detects the user's geographic location using geolocation APIs."
+      },
+      "s2": {
+        "title": "Fetch Weather Data",
+        "desc": "Retrieves real-time weather conditions including temperature, humidity, and rainfall."
+      },
+      "s3": {
+        "title": "Fetch Soil Data",
+        "desc": "Collects live soil health data such as pH, moisture, and nutrient levels."
+      },
+      "s4": {
+        "title": "ML Analysis",
+        "desc": "Processes all data through a trained RandomForest model for intelligent analysis."
+      },
+      "s5": {
+        "title": "Get Recommendations",
+        "desc": "Delivers personalized crop care suggestions: irrigation, fertilization, shading, and more."
+      }
+    },
+    "reasons_list": [
+      "Real-time intelligent recommendations",
+      "AI-powered decision making",
+      "Accurate environmental analysis",
+      "Fast and reliable system",
+      "Modern and scalable architecture",
+      "Designed for farmers, by technologists"
+    ],
+    "tech_list": {
+      "t1": {
+        "title": "Frontend",
+        "techs": [
+          "Next.js",
+          "React",
+          "TypeScript",
+          "TailwindCSS"
+        ]
+      },
+      "t2": {
+        "title": "Backend",
+        "techs": [
+          "Python",
+          "FastAPI"
+        ]
+      },
+      "t3": {
+        "title": "Machine Learning",
+        "techs": [
+          "Scikit-learn",
+          "RandomForest"
+        ]
+      },
+      "t4": {
+        "title": "APIs & Data",
+        "techs": [
+          "Weather API",
+          "Soil Data API"
+        ]
+      },
+      "t5": {
+        "title": "Architecture",
+        "techs": [
+          "REST API",
+          "Real-time Processing"
+        ]
+      }
+    }
   },
   "contact": {
     "get_in_touch_badge": "Get In Touch",
@@ -89,7 +226,30 @@
     "cta_title": "Start Optimizing Your Crop Health Today",
     "cta_desc": "Join thousands of farmers using AI-powered insights to grow smarter, healthier crops with data-driven recommendations.",
     "go_to_dashboard": "Go to Dashboard",
-    "get_recommendations": "Get Recommendations"
+    "get_recommendations": "Get Recommendations",
+    "kolkata": "Kolkata, India",
+    "within_24_hours": "Within 24 hours",
+    "data_security_title": "Data Security",
+    "data_security_primary": "100% Encrypted",
+    "data_security_sub": "Your data is always private and never shared with third parties.",
+    "faqs_list": {
+      "q1": {
+        "q": "How accurate are the crop recommendations?",
+        "a": "Our recommendations are based on real-time soil and weather data combined with machine learning algorithms trained on extensive agricultural datasets, ensuring high accuracy and reliability."
+      },
+      "q2": {
+        "q": "How often is the data updated?",
+        "a": "Environmental data including weather conditions and soil metrics are updated every 30 minutes to provide you with the most current information for decision-making."
+      },
+      "q3": {
+        "q": "Do I need special sensors or equipment?",
+        "a": "No special equipment is required. Our system works using your location data and integrates with weather and soil APIs to provide comprehensive analysis without additional hardware."
+      },
+      "q4": {
+        "q": "Is my data secure and private?",
+        "a": "Yes, we take data security seriously. All information is encrypted and securely stored. We never share your personal data with third parties."
+      }
+    }
   },
   "crops": {
     "loading": "Loading your dashboard...",
@@ -106,7 +266,7 @@
     "add_first_crop": "Add your first crop to get started",
     "crop_name": "Crop Name",
     "location": "Location",
-    "select_crop": "Select crop type",
+    "select_crop": "Select crop…",
     "enter_location": "Enter location",
     "saving": "Saving...",
     "save_crop": "Save Crop",
@@ -131,7 +291,59 @@
     "last_checked": "Last checked",
     "sign_out": "Sign Out",
     "signing_out": "Signing out...",
-    "get_recommendations": "Get Recommendations"
+    "get_recommendations": "Get Recommendations",
+    "yield_estimator_desc": "Estimate your expected harvest based on crop type and field size.",
+    "field_size": "Field Size",
+    "calculate_yield": "Calculate Yield",
+    "estimated_yield_for_ha": "Estimated yield for ",
+    "estimated_yield_for_ac": "Estimated yield for ",
+    "estimated_yield_under_good_conditions": " under good conditions",
+    "hectares": "hectare(s)",
+    "acres": "acre(s)",
+    "quick_actions": "Quick Actions",
+    "qa_get_recs": "Get Crop Recommendations",
+    "qa_profile": "My Profile & Settings",
+    "qa_about": "About FarmIQ",
+    "qa_contact": "Contact Support",
+    "humidity": "Humidity",
+    "wind": "Wind",
+    "weather_unavailable": "Weather data unavailable",
+    "good_morning": "Good morning",
+    "good_afternoon": "Good afternoon",
+    "good_evening": "Good evening",
+    "total_crops": "Total Crops",
+    "healthy": "Healthy",
+    "needs_attention": "Needs Attention",
+    "critical": "Critical",
+    "filter_all": "All",
+    "filter_low": "Low",
+    "filter_medium": "Medium",
+    "filter_high": "High",
+    "risk_low": "Low",
+    "risk_medium": "Medium",
+    "risk_high": "High",
+    "tomorrow": "Tomorrow",
+    "select_a_crop": "Select a crop...",
+    "crop_label": "Crop",
+    "size_placeholder": "Size",
+    "current_soil_nutrients": "Current Soil Nutrients",
+    "leave_blank_defaults": "(leave blank to use defaults)",
+    "nitrogen_label": "Nitrogen (N)",
+    "phosphorus_label": "Phosphorus (P)",
+    "potassium_label": "Potassium (K)",
+    "calc_fert_req": "Calculate Fertilizer Requirements",
+    "recommended_fert": "Recommended Fertilizers for",
+    "nutrient_deficit": "Nutrient Deficit (kg/total field)",
+    "n_deficit": "N deficit",
+    "p_deficit": "P deficit",
+    "k_deficit": "K deficit",
+    "fert_disclaimer": "* Estimates based on standard agronomic requirements. Apply in split doses for best results. Consult a local agronomist for field-specific advice.",
+    "crop_status_overview": "Crop Status Overview",
+    "overall_farm_health": "Overall Farm Health",
+    "percent_healthy": "% Healthy",
+    "healthy_label": "Healthy",
+    "warning_label": "Warning",
+    "critical_label": "Critical"
   },
   "profile": {
     "active_account": "Active Account",
@@ -161,5 +373,51 @@
     "delete_account_desc": "Permanently remove your account and all data",
     "cancel": "Cancel",
     "delete": "Delete"
+  },
+  "auth": {
+    "sign_in": "Sign In",
+    "sign_up": "Sign Up",
+    "reset_password": "Reset Password",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm password",
+    "forgot_password": "Forgot Password?",
+    "create_account": "Create account",
+    "send_reset_link": "Send Reset Link",
+    "back_to_sign_in": "Back to Sign In",
+    "or_continue_with": "Or continue with",
+    "sign_in_with_google": "Sign in with Google",
+    "sign_up_with_google": "Sign up with Google",
+    "terms_agreement": "By continuing, you agree to our terms."
+  },
+  "crop_names": {
+    "bajra_pearl_millet": "Bajra (Pearl Millet)",
+    "barley": "Barley",
+    "black_gram_urad": "Black Gram (Urad)",
+    "chickpea_chana": "Chickpea (Chana)",
+    "coconut": "Coconut",
+    "coffee": "Coffee",
+    "corn_maize": "Corn (Maize)",
+    "cotton": "Cotton",
+    "groundnut_peanut": "Groundnut (Peanut)",
+    "jowar_sorghum": "Jowar (Sorghum)",
+    "jute": "Jute",
+    "lentil_masoor": "Lentil (Masoor)",
+    "millet": "Millet",
+    "mustard": "Mustard",
+    "onion": "Onion",
+    "pigeon_pea_arhar_tur": "Pigeon Pea (Arhar/Tur)",
+    "potato": "Potato",
+    "ragi_finger_millet": "Ragi (Finger Millet)",
+    "rice_paddy": "Rice (Paddy)",
+    "sesame": "Sesame",
+    "soybean": "Soybean",
+    "sugarcane": "Sugarcane",
+    "sunflower": "Sunflower",
+    "tea": "Tea",
+    "tomato": "Tomato",
+    "wheat": "Wheat"
   }
 }

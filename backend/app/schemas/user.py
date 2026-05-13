@@ -35,8 +35,10 @@ class UserLogin(BaseModel):
         return v.strip()
 
 
+from beanie import PydanticObjectId
+
 class UserResponse(BaseModel):
-    id: int
+    id: PydanticObjectId
     email: str
     first_name: str
     last_name: str

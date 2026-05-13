@@ -1,10 +1,11 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.routes import weather, soil, predict, auth, contact, crops
-from app.database.db import engine, Base
+from app.database.db import init_db
 
 # rate limiting
 from slowapi.errors import RateLimitExceeded
@@ -12,8 +13,10 @@ from starlette.requests import Request
 from slowapi.middleware import SlowAPIMiddleware
 
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
 
 # initialize rate limiter
 def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
@@ -25,7 +28,8 @@ def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 app = FastAPI(
     title="FarmIQ API",
     description="AI-powered crop recommendation system",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # attach limiter
@@ -36,7 +40,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        settings.FRONTEND_URL,
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

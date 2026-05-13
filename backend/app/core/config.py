@@ -8,8 +8,8 @@ ENV_FILE = Path(__file__).parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
-    # Database (SQLite by default for easier setup)
-    DATABASE_URL: str = "sqlite:///./crop_advisor.db"
+    # Database (MongoDB)
+    MONGODB_URL: str = "mongodb://localhost:27017/crop_advisor"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     AUTH_SECRET: Optional[str] = None
 
     # Frontend URL (used in email links for password reset / verification)
-    FRONTEND_URL: str = "http://localhost:3001"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # Application
     # use environment variable so production won't run in debug mode
@@ -58,5 +58,6 @@ class Settings(BaseSettings):
         env_file = str(ENV_FILE)
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"
 
 settings = Settings()

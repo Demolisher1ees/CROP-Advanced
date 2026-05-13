@@ -1,20 +1,26 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
 from app.core.config import settings
 
-# SQLite needs check_same_thread=False
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+# Import all models here so Beanie can register them
+from app.models.user import User
+from app.models.crop import Crop
+from app.models.contact import ContactMessage
+from app.models.password_reset import PasswordReset
 
-engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+async def init_db():
+    """Initialize MongoDB connection and Beanie ODM"""
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    # The database name is the path part of the URL (e.g., /crop_advisor)
+    db_name = settings.MONGODB_URL.split("/")[-1].split("?")[0]
+    
+    await init_beanie(
+        database=client[db_name],
+        document_models=[
+            User,
+            Crop,
+            ContactMessage,
+            PasswordReset
+        ]
+    )
 
-
-def get_db():
-    """Database session dependency"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
