@@ -78,6 +78,7 @@ export function Navbar() {
                       src={session.user.image}
                       alt={session.user.name || "User"}
                       className="w-8 h-8 rounded-full ring-2 ring-green-100 group-hover:ring-green-300 transition-all"
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center ring-2 ring-green-100 group-hover:ring-green-300 transition-all">
@@ -168,7 +169,7 @@ export function Navbar() {
                   className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   {session.user?.image ? (
-                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full" />
+                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                       <span className="text-xs font-bold text-green-700">

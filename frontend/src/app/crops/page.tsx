@@ -49,7 +49,9 @@ const CROPS = [
   "Coconut", "Coffee", "Corn (Maize)", "Cotton", "Groundnut (Peanut)",
   "Jowar (Sorghum)", "Jute", "Lentil (Masoor)", "Millet", "Mustard", "Onion",
   "Pigeon Pea (Arhar/Tur)", "Potato", "Ragi (Finger Millet)", "Rice (Paddy)",
-  "Sesame", "Soybean", "Sugarcane", "Sunflower", "Tea", "Tomato", "Wheat"
+  "Sesame", "Soybean", "Sugarcane", "Sunflower", "Tea", "Tomato", "Wheat",
+  "Kidney Beans (Rajma)", "Moth Beans", "Mung Bean", "Pomegranate", "Banana",
+  "Mango", "Grapes", "Watermelon", "Muskmelon", "Apple", "Orange", "Papaya"
 ]
 
 // N, P, K requirements in kg/hectare
@@ -67,6 +69,12 @@ const NPK: Record<string, [number, number, number]> = {
   "soybean": [20, 60, 40], "sugarcane": [200, 100, 200],
   "sunflower": [90, 60, 60], "tea": [120, 30, 80],
   "tomato": [150, 60, 200], "wheat": [120, 60, 40],
+  "kidney beans (rajma)": [22, 67, 20], "moth beans": [22, 49, 20],
+  "mung bean": [22, 47, 20], "pomegranate": [18, 20, 40],
+  "banana": [101, 81, 50], "mango": [21, 28, 30],
+  "grapes": [24, 133, 201], "watermelon": [99, 18, 51],
+  "muskmelon": [100, 18, 50], "apple": [24, 137, 200],
+  "orange": [19, 16, 10], "papaya": [49, 60, 50]
 }
 
 // Tonnes per hectare (good conditions)
@@ -80,6 +88,10 @@ const YIELDS: Record<string, number> = {
   "rice (paddy)": 4.5, "sesame": 0.8, "soybean": 2.5,
   "sugarcane": 70.0, "sunflower": 1.5, "tea": 2.0,
   "tomato": 35.0, "wheat": 3.2,
+  "kidney beans (rajma)": 2.0, "moth beans": 0.8, "mung bean": 1.0,
+  "pomegranate": 15.0, "banana": 35.0, "mango": 12.0,
+  "grapes": 15.0, "watermelon": 35.0, "muskmelon": 20.0,
+  "apple": 20.0, "orange": 25.0, "papaya": 50.0
 }
 
 /* ─── Component ─── */
@@ -103,6 +115,8 @@ export default function CropsOverviewPage() {
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isPestAlertClosed, setIsPestAlertClosed] = useState(false)
+  const [isEditingWeatherLocation, setIsEditingWeatherLocation] = useState(false)
+  const [tempWeatherLocation, setTempWeatherLocation] = useState("")
 
   // search & filter
   const [searchQuery, setSearchQuery] = useState("")
@@ -111,6 +125,8 @@ export default function CropsOverviewPage() {
   // Add Crop modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newCropName, setNewCropName] = useState("")
+  const [isAddCropNameOpen, setIsAddCropNameOpen] = useState(false)
+  const addCropNameTriggerRef = useRef<HTMLDivElement>(null)
   const [newCropLocation, setNewCropLocation] = useState("")
   const [isAddingCrop, setIsAddingCrop] = useState(false)
 
@@ -181,13 +197,47 @@ export default function CropsOverviewPage() {
       setIsLoadingWeather(true)
       const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
       if (!apiKey) throw new Error("No OpenWeather API key")
+      
       let lat = 28.6139, lon = 77.2090
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 300000 })
-        )
-        lat = pos.coords.latitude; lon = pos.coords.longitude
-      } catch { console.warn("Geolocation unavailable, using default") }
+      let customLocUsed = false
+
+      // Check localStorage for custom weather location
+      const savedLoc = typeof window !== 'undefined' ? localStorage.getItem("dashboard_location") : null
+      if (savedLoc) {
+        try {
+          const parsed = JSON.parse(savedLoc)
+          if (parsed.lat && parsed.lon) {
+            lat = parsed.lat
+            lon = parsed.lon
+            customLocUsed = true
+            console.log(`Using saved custom location coordinates: ${lat}, ${lon}`)
+          }
+        } catch (e) {
+          console.error("Error parsing saved location", e)
+        }
+      }
+
+      // If no custom location, try using coordinates from the first crop that has them
+      if (!customLocUsed) {
+        const cropWithCoords = crops.find(c => (c as any).latitude && (c as any).longitude)
+        if (cropWithCoords) {
+          lat = (cropWithCoords as any).latitude
+          lon = (cropWithCoords as any).longitude
+          customLocUsed = true
+          console.log(`Using coordinates from crop ${cropWithCoords.crop_name}: ${lat}, ${lon}`)
+        }
+      }
+
+      // If still no location, try browser geolocation
+      if (!customLocUsed) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 0 })
+          )
+          lat = pos.coords.latitude; lon = pos.coords.longitude
+        } catch { console.warn("Geolocation unavailable, using default") }
+      }
+
       const langParam = language.includes("Bengali") ? "bn" : language.includes("Hindi") ? "hi" : "en";
       const base = `https://api.openweathermap.org/data/2.5`
       const params = `lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${langParam}`
@@ -213,6 +263,67 @@ export default function CropsOverviewPage() {
     finally { setIsLoadingWeather(false) }
   }
 
+  const handleUpdateWeatherLocation = async () => {
+    if (!tempWeatherLocation.trim()) return
+    setIsLoadingWeather(true)
+    try {
+      let lat: number | null = null
+      let lon: number | null = null
+      let displayName = tempWeatherLocation.trim()
+
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+      
+      // Try Google Maps Geocoding API if key is present
+      if (apiKey && apiKey !== 'your-google-maps-api-key-here' && apiKey.length > 20) {
+        try {
+          const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(tempWeatherLocation)}&key=${apiKey}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.status === 'OK' && data.results && data.results.length > 0) {
+              lat = data.results[0].geometry.location.lat
+              lon = data.results[0].geometry.location.lng
+              displayName = data.results[0].formatted_address
+            }
+          }
+        } catch (err) {
+          console.warn("Google geocoding failed for custom weather location:", err)
+        }
+      }
+
+      // Fallback to Nominatim keyless geocoding
+      if (lat === null || lon === null) {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(tempWeatherLocation)}&format=json&limit=1`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'FarmIQ-Crop-Recommendation-App'
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data && data.length > 0) {
+            lat = parseFloat(data[0].lat)
+            lon = parseFloat(data[0].lon)
+            displayName = data[0].display_name.split(',')[0] // short name
+          }
+        }
+      }
+
+      if (lat !== null && lon !== null) {
+        localStorage.setItem("dashboard_location", JSON.stringify({ name: displayName, lat, lon }))
+        console.log(`Saved custom location "${displayName}" with coordinates: ${lat}, ${lon}`)
+        setIsEditingWeatherLocation(false)
+        setTempWeatherLocation("")
+        await fetchWeather()
+      } else {
+        alert("Location not found. Please try another query.")
+      }
+    } catch (e) {
+      console.error("Error setting custom location", e)
+    } finally {
+      setIsLoadingWeather(false)
+    }
+  }
+
   const handleSignOut = async () => {
     setIsSigningOut(true); clearAllCookies()
     await signOut({ callbackUrl: "/", redirect: true })
@@ -222,11 +333,60 @@ export default function CropsOverviewPage() {
   const handleAddCrop = async () => {
     if (!newCropName || !newCropLocation) return
     setIsAddingCrop(true)
+
+    let lat: number | null = null
+    let lon: number | null = null
+
+    try {
+      console.log(`Geocoding crop location: "${newCropLocation}"`)
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+      
+      // Try Google Maps Geocoding API if key is present
+      if (apiKey && apiKey !== 'your-google-maps-api-key-here' && apiKey.length > 20) {
+        try {
+          const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(newCropLocation)}&key=${apiKey}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.status === 'OK' && data.results && data.results.length > 0) {
+              lat = data.results[0].geometry.location.lat
+              lon = data.results[0].geometry.location.lng
+            }
+          }
+        } catch (err) {
+          console.warn("Google geocoding failed for crop:", err)
+        }
+      }
+
+      // Fallback to Nominatim keyless geocoding
+      if (lat === null || lon === null) {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(newCropLocation)}&format=json&limit=1`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'FarmIQ-Crop-Recommendation-App'
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data && data.length > 0) {
+            lat = parseFloat(data[0].lat)
+            lon = parseFloat(data[0].lon)
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Geocoding failed, sending null coordinates:", e)
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/crops`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ crop_name: newCropName, location: newCropLocation, latitude: null, longitude: null })
+        body: JSON.stringify({ 
+          crop_name: newCropName, 
+          location: newCropLocation, 
+          latitude: lat, 
+          longitude: lon 
+        })
       })
       if (res.ok) {
         await fetchCrops()
@@ -574,10 +734,10 @@ export default function CropsOverviewPage() {
                       {isYieldCropOpen && (
                         <>
                           <div className="fixed inset-0 z-[60]" onClick={() => setIsYieldCropOpen(false)} />
-                          <div
-                            className="absolute z-[61] top-full mt-1.5 left-0 w-full rounded-2xl border border-white/60 dark:border-gray-700 bg-white/90 dark:bg-gray-800/95 backdrop-blur-md shadow-2xl overflow-hidden"
+                           <div
+                            className="absolute z-[61] bottom-full mb-1.5 left-0 w-full rounded-2xl border border-white/60 dark:border-gray-700 bg-white/90 dark:bg-gray-800/95 backdrop-blur-md shadow-2xl overflow-hidden"
                           >
-                            <div className="py-1.5 hide-scrollbar">
+                            <div className="max-h-60 overflow-y-auto py-1.5 hide-scrollbar">
                               {CROPS.map((crop) => (
                                 <div
                                   key={crop}
@@ -683,15 +843,37 @@ export default function CropsOverviewPage() {
               {/* Weather Card */}
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm text-white p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold flex items-center gap-2">
-                    <CloudSun size={18} /> {t("crops.weather")}
-                    {weather?.location && (
-                      <span className="text-xs font-normal text-blue-200 flex items-center gap-1">
-                        <MapPin size={11} />{weather.location}
+                  <h2 className="font-semibold flex items-center gap-2 flex-1 mr-2">
+                    <CloudSun size={18} className="shrink-0" />
+                    {isEditingWeatherLocation ? (
+                      <input
+                        type="text"
+                        value={tempWeatherLocation}
+                        onChange={(e) => setTempWeatherLocation(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleUpdateWeatherLocation()
+                          if (e.key === 'Escape') setIsEditingWeatherLocation(false)
+                        }}
+                        placeholder="Search location..."
+                        className="text-xs px-2 py-1 rounded bg-white/20 border border-white/30 text-white placeholder-blue-200 focus:outline-none focus:ring-1 focus:ring-white w-full max-w-[130px]"
+                        autoFocus
+                      />
+                    ) : (
+                      <span 
+                        onClick={() => {
+                          setTempWeatherLocation(weather?.location || "")
+                          setIsEditingWeatherLocation(true)
+                        }}
+                        className="text-xs font-normal text-blue-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors bg-white/10 px-2 py-1 rounded-md"
+                        title="Click to edit location"
+                      >
+                        <MapPin size={11} />
+                        <span className="max-w-[100px] truncate">{weather?.location || "Detecting..."}</span>
+                        <span className="text-[10px] text-blue-300">✎</span>
                       </span>
                     )}
                   </h2>
-                  <button onClick={fetchWeather} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"><RefreshCw size={14} /></button>
+                  <button onClick={fetchWeather} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors shrink-0"><RefreshCw size={14} /></button>
                 </div>
                 {isLoadingWeather ? (
                   <div className="flex items-center justify-center py-6"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white/60" /></div>
@@ -789,22 +971,53 @@ export default function CropsOverviewPage() {
           ADD CROP MODAL
       ══════════════════════════════════════════════════ */}
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm pt-20" onClick={() => setIsAddModalOpen(false)}>
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm fixed" />
-            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 mb-10" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm" onClick={() => { setIsAddModalOpen(false); setIsAddCropNameOpen(false); }}>
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><Plus size={18} className="text-green-600" /> {t("crops.add_crop")}</h2>
-                <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={20} /></button>
+                <button onClick={() => { setIsAddModalOpen(false); setIsAddCropNameOpen(false); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={20} /></button>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t("crops.crop_name")}</label>
-                  <div className="relative">
-                    <select value={newCropName} onChange={e => setNewCropName(e.target.value)} className="w-full pl-3 pr-8 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-green-500">
-                      <option value="">{t("crops.select_a_crop")}</option>
-                      {CROPS.map(c => <option key={c} value={c}>{tCrop(c)}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  {/* Custom dropdown */}
+                  <div className="relative" ref={addCropNameTriggerRef}>
+                    <div
+                      onClick={() => setIsAddCropNameOpen(!isAddCropNameOpen)}
+                      className="w-full flex items-center justify-between pl-3 pr-8 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm cursor-pointer select-none transition-colors hover:border-green-500"
+                    >
+                      <span className={`truncate ${newCropName ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                        {newCropName ? tCrop(newCropName) : t("crops.select_a_crop") || "Select a crop..."}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-transform duration-200 ${isAddCropNameOpen ? 'rotate-180' : ''}`}
+                    />
+
+                    {isAddCropNameOpen && (
+                      <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => setIsAddCropNameOpen(false)} />
+                        <div
+                          className="absolute z-[61] top-full mt-1.5 left-0 w-full rounded-2xl border border-white/60 dark:border-gray-700 bg-white/90 dark:bg-gray-800/95 backdrop-blur-md shadow-2xl overflow-hidden"
+                        >
+                          <div className="max-h-60 overflow-y-auto py-1.5 hide-scrollbar">
+                            {CROPS.map((crop) => (
+                              <div
+                                key={crop}
+                                onClick={() => { setNewCropName(crop); setIsAddCropNameOpen(false) }}
+                                className={`px-4 py-2.5 text-sm text-center cursor-pointer transition-colors ${newCropName === crop
+                                    ? 'bg-green-600/10 text-green-700 dark:text-green-400 font-semibold'
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-green-700 dark:hover:text-green-400'
+                                  }`}
+                              >
+                                {tCrop(crop)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -816,7 +1029,7 @@ export default function CropsOverviewPage() {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">{t("crops.cancel")}</button>
+                <button onClick={() => { setIsAddModalOpen(false); setIsAddCropNameOpen(false); }} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">{t("crops.cancel")}</button>
                 <button onClick={handleAddCrop} disabled={!newCropName || !newCropLocation || isAddingCrop} className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                   {isAddingCrop ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> {t("crops.saving")}</> : <><Plus size={16} /> {t("crops.save_crop")}</>}
                 </button>
@@ -829,8 +1042,8 @@ export default function CropsOverviewPage() {
           FERTILIZER CALCULATOR MODAL
       ══════════════════════════════════════════════════ */}
         {fertOpen && (
-          <div className="fixed inset-0 z-[100] flex justify-center items-start p-4 overflow-y-auto bg-black/60 backdrop-blur-sm pt-20" onClick={() => { setFertOpen(false); setFertResult(null) }}>
-            <div className="relative bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl w-full max-w-md p-6 mb-10" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[100] flex justify-center items-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm" onClick={() => { setFertOpen(false); setFertResult(null) }}>
+            <div className="relative bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
@@ -907,12 +1120,12 @@ export default function CropsOverviewPage() {
                           onChange={e => { setFertSize(e.target.value); setFertResult(null) }}
                           className="fert-input w-full pl-2 pr-6 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-xs"
                         />
-                        <div className="absolute right-2 inset-y-0 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
-                          <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-200 transition-colors leading-none" onClick={() => setFertSize(v => String(Math.round((parseFloat(v || '0') + 0.1) * 10) / 10))}>
-                            <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M5 0L10 6H0L5 0Z" /></svg>
+                        <div className="absolute right-1.5 inset-y-0 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
+                          <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors leading-none" onClick={() => setFertSize(v => String(Math.round((parseFloat(v || '0') + 0.1) * 10) / 10))}>
+                            <svg width="8" height="5" viewBox="0 0 10 6" fill="currentColor"><path d="M5 0L10 6H0L5 0Z" /></svg>
                           </button>
-                          <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-200 transition-colors leading-none" onClick={() => setFertSize(v => String(Math.max(0.1, Math.round((parseFloat(v || '0.1') - 0.1) * 10) / 10)))}>
-                            <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0H10L5 6Z" /></svg>
+                          <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors leading-none" onClick={() => setFertSize(v => String(Math.max(0.1, Math.round((parseFloat(v || '0.1') - 0.1) * 10) / 10)))}>
+                            <svg width="8" height="5" viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0H10L5 6Z" /></svg>
                           </button>
                         </div>
                       </div>
@@ -965,27 +1178,34 @@ export default function CropsOverviewPage() {
                   <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
                     {t("crops.current_soil_nutrients")} <span className="font-normal text-gray-400 text-[10px]">{t("crops.leave_blank_defaults")}</span>
                   </p>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: t("crops.nitrogen_label"), hint: "g/kg", val: fertN, set: setFertN },
                       { label: t("crops.phosphorus_label"), hint: "mg/kg", val: fertP, set: setFertP },
                       { label: t("crops.potassium_label"), hint: "mg/kg", val: fertK, set: setFertK },
                     ].map(({ label, hint, val, set }) => (
-                      <div key={label}>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">{label} <span className="text-gray-400">({hint})</span></label>
+                      <div key={label} className="min-w-0">
+                        <div className="flex flex-col justify-end min-h-[36px] mb-1">
+                          <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 leading-tight">
+                            {label}
+                          </span>
+                          <span className="text-[9px] text-gray-400 leading-none mt-0.5">
+                            ({hint})
+                          </span>
+                        </div>
                         <div className="relative">
                           <input
                             type="number" min="0" step="0.1" placeholder="0"
                             value={val}
                             onChange={e => { set(e.target.value); setFertResult(null) }}
-                            className="fert-input w-full pl-3 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                            className="fert-input w-full pl-2 pr-6 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                           />
-                          <div className="absolute right-2 inset-y-0 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
-                            <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-200 transition-colors leading-none" onClick={() => set(v => String(Math.round((parseFloat(v || '0') + 0.1) * 10) / 10))}>
-                              <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M5 0L10 6H0L5 0Z" /></svg>
+                          <div className="absolute right-1.5 inset-y-0 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
+                            <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors leading-none" onClick={() => set(v => String(Math.round((parseFloat(v || '0') + 0.1) * 10) / 10))}>
+                              <svg width="8" height="5" viewBox="0 0 10 6" fill="currentColor"><path d="M5 0L10 6H0L5 0Z" /></svg>
                             </button>
-                            <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-200 transition-colors leading-none" onClick={() => set(v => String(Math.max(0, Math.round((parseFloat(v || '0') - 0.1) * 10) / 10)))}>
-                              <svg width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0H10L5 6Z" /></svg>
+                            <button type="button" className="pointer-events-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors leading-none" onClick={() => set(v => String(Math.max(0, Math.round((parseFloat(v || '0') - 0.1) * 10) / 10)))}>
+                              <svg width="8" height="5" viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0H10L5 6Z" /></svg>
                             </button>
                           </div>
                         </div>

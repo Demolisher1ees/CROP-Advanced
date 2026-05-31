@@ -15,6 +15,9 @@ async def init_db():
     parsed_db_name = settings.MONGODB_URL.split("/")[-1].split("?")[0]
     db_name = parsed_db_name if parsed_db_name else "crop_advisor"
     
+    # Avoid TypeError: MotorDatabase object is not callable in Beanie 2.1.0/Motor 3.7.x
+    client.append_metadata = lambda *args, **kwargs: None
+
     await init_beanie(
         database=client[db_name],
         document_models=[

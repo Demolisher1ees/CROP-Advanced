@@ -1,6 +1,6 @@
 # 🔧 Local Development Setup
 
-This guide walks you through running FarmIQ completely locally without Docker.
+This guide walks you through running FarmIQ completely locally with your native MongoDB database.
 
 ---
 
@@ -10,7 +10,7 @@ This guide walks you through running FarmIQ completely locally without Docker.
 |---|---|---|
 | Node.js | 18+ | https://nodejs.org |
 | Python | 3.11+ | https://python.org |
-| PostgreSQL | 15+ | https://postgresql.org |
+| MongoDB | 6.0+ | https://www.mongodb.com/try/download/community |
 | Redis | 7+ | https://redis.io (or use `redis-server` via Homebrew/apt) |
 | Git | any | https://git-scm.com |
 
@@ -25,17 +25,26 @@ cd CROP-Advanced
 
 ---
 
-## Step 2 — Set Up PostgreSQL
+## Step 2 — Verify MongoDB is Running
 
-```sql
--- Connect as postgres superuser
-psql -U postgres
+Ensure your local MongoDB database service is running. 
 
-CREATE USER cropuser WITH PASSWORD 'croppass';
-CREATE DATABASE crop_advisor OWNER cropuser;
-GRANT ALL PRIVILEGES ON DATABASE crop_advisor TO cropuser;
-\q
-```
+* **Windows (PowerShell)**:
+  ```powershell
+  Get-Service -Name MongoDB
+  ```
+  If it's stopped, start it:
+  ```powershell
+  Start-Service -Name MongoDB
+  ```
+* **Linux/Mac**:
+  ```bash
+  sudo systemctl status mongod
+  # Or start it:
+  sudo systemctl start mongod
+  ```
+
+MongoDB will run on its default port: `27017`. The backend connects to it via Beanie ODM and automatically initializes database collections. No manual schema creation or migrations are required.
 
 ---
 
@@ -75,9 +84,6 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit backend/.env (see docs/ENVIRONMENT.md for all variables)
 
-# Run database migrations
-alembic upgrade head
-
 # Start backend
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -114,7 +120,7 @@ The app will be available at `http://localhost:3001`.
 | Frontend | 3001 | http://localhost:3001 |
 | Backend API | 8000 | http://localhost:8000 |
 | ML Service | 8001 | http://localhost:8001 |
-| PostgreSQL | 5432 | localhost:5432 |
+| MongoDB | 27017 | localhost:27017 |
 | Redis | 6379 | localhost:6379 |
 
 ---
@@ -135,11 +141,15 @@ npm test
 
 ## Common Issues
 
-### `DATABASE_URL` connection refused
-Make sure PostgreSQL is running: `sudo service postgresql start` (Linux) or start PostgreSQL from the app (Windows/Mac).
+### `MONGODB_URL` connection refused
+Make sure MongoDB service is running and accessible on port `27017`. You can test connection with MongoDB Compass or:
+```bash
+curl http://localhost:27017
+```
 
 ### `NEXTAUTH_URL` mismatch
 Ensure `frontend/.env.local` has `NEXTAUTH_URL=http://localhost:3001` and your Google OAuth Authorized Redirect URI matches.
 
 ### ML model not found
 The ML service auto-trains on startup if no model file is found. Check `ml-service/data/` for the dataset CSV.
+

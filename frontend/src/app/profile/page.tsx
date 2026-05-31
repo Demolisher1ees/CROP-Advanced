@@ -135,6 +135,7 @@ export default function ProfilePage() {
                   src={session.user.image}
                   alt={session.user.name || ""}
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl ring-4 ring-white/30 shadow-2xl object-cover"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl ring-4 ring-white/30 shadow-2xl bg-gradient-to-br from-green-300 to-emerald-700 flex items-center justify-center">

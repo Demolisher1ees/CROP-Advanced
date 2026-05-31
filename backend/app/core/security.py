@@ -1,3 +1,13 @@
+import bcrypt
+
+# Monkeypatch bcrypt.hashpw to avoid ValueError in passlib on Python 3.13/bcrypt 5.0.0+
+original_hashpw = bcrypt.hashpw
+def patched_hashpw(password: bytes, salt: bytes) -> bytes:
+    if len(password) > 72:
+        password = password[:72]
+    return original_hashpw(password, salt)
+bcrypt.hashpw = patched_hashpw
+
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt

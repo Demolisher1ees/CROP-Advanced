@@ -19,7 +19,9 @@ const CROPS = [
   "Coconut", "Coffee", "Corn (Maize)", "Cotton", "Groundnut (Peanut)", 
   "Jowar (Sorghum)", "Jute", "Lentil (Masoor)", "Millet", "Mustard", "Onion", 
   "Pigeon Pea (Arhar/Tur)", "Potato", "Ragi (Finger Millet)", "Rice (Paddy)", 
-  "Sesame", "Soybean", "Sugarcane", "Sunflower", "Tea", "Tomato", "Wheat"
+  "Sesame", "Soybean", "Sugarcane", "Sunflower", "Tea", "Tomato", "Wheat",
+  "Kidney Beans (Rajma)", "Moth Beans", "Mung Bean", "Pomegranate", "Banana",
+  "Mango", "Grapes", "Watermelon", "Muskmelon", "Apple", "Orange", "Papaya"
 ]
 
 const getCropKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/_$/, '')
@@ -182,8 +184,11 @@ export function HeroSection() {
   }
 
   const [location, setLocation] = useState<string>("")
+  const [lastFetchedLocation, setLastFetchedLocation] = useState<string>("")
   const [isDetecting, setIsDetecting] = useState(false)
+  const [isGeocoding, setIsGeocoding] = useState(false)
   const [error, setError] = useState<string>("")
+  const [infoMessage, setInfoMessage] = useState<string>("")
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
   const [soilData, setSoilData] = useState<SoilData | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(false)
@@ -194,6 +199,148 @@ export function HeroSection() {
   const [showManualInput, setShowManualInput] = useState(false)
   const [manualLocation, setManualLocation] = useState("")
 
+  const fetchEnvironmentalData = async (latitude: number, longitude: number) => {
+    setIsLoadingData(true)
+    setError("")
+    
+    let resolvedWeather: WeatherData | null = null
+    let resolvedSoil: SoilData | null = null
+
+    // Try real weather API first
+    try {
+      if (process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY && 
+          process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY !== 'your-openweather-api-key-here') {
+        console.log('Attempting to fetch real weather data...')
+        resolvedWeather = await fetchWeatherData(latitude, longitude)
+        console.log('Real weather data loaded successfully')
+      } else {
+        throw new Error('No weather API key available')
+      }
+    } catch (weatherError) {
+      console.log('Using mock weather data:', weatherError)
+      resolvedWeather = {
+        temperature: 25 + Math.random() * 10, // 25-35°C
+        humidity: 60 + Math.random() * 20,    // 60-80%
+        precipitation: Math.random() * 20,     // 0-20mm
+        windSpeed: 2 + Math.random() * 8,     // 2-10 m/s
+        pressure: 1010 + Math.random() * 20,  // 1010-1030 hPa
+        description: "Partly Cloudy",
+        icon: "02d",
+        feelsLike: 26 + Math.random() * 12,   // Feels like temp
+        tempMin: 22 + Math.random() * 5,      // Min temp
+        tempMax: 30 + Math.random() * 8       // Max temp
+      }
+    }
+    setWeatherData(resolvedWeather)
+
+    // Try real soil API first, fallback to mock data on error
+    try {
+      console.log('Attempting to fetch real soil data...')
+      resolvedSoil = await fetchSoilData(latitude, longitude)
+      console.log('Real soil data loaded successfully')
+    } catch (soilError) {
+      console.log('Using mock soil data:', soilError)
+      resolvedSoil = {
+        ph: 6.0 + Math.random() * 2,          // pH 6.0-8.0
+        nitrogen: 1.5 + Math.random() * 2,    // 1.5-3.5 g/kg
+        phosphorus: 10 + Math.random() * 20,  // 10-30 mg/kg
+        potassium: 150 + Math.random() * 100, // 150-250 mg/kg
+        organicCarbon: 0.8 + Math.random() * 1.5, // 0.8-2.3%
+        bulkDensity: 1.2 + Math.random() * 0.4,   // 1.2-1.6 g/cm³
+        clayContent: 15 + Math.random() * 25,     // 15-40%
+        sandContent: 30 + Math.random() * 40,     // 30-70%
+        siltContent: 15 + Math.random() * 25      // 15-40%
+      }
+    }
+    setSoilData(resolvedSoil)
+    setIsLoadingData(false)
+
+    return { weather: resolvedWeather, soil: resolvedSoil }
+  }
+
+  const handleManualLocationSearch = async (locationName: string) => {
+    if (!locationName.trim()) {
+      setError("Please enter a location name")
+      return null
+    }
+
+    setIsGeocoding(true)
+    setError("")
+
+    try {
+      console.log(`Starting geocoding for manual location: "${locationName}"`)
+      
+      // 1. Try Google Maps Geocoding API if key is available
+      let lat: number | null = null
+      let lon: number | null = null
+      let displayName = locationName.trim()
+
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+      if (apiKey && apiKey !== 'your-google-maps-api-key-here' && apiKey.length > 20) {
+        try {
+          const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationName)}&key=${apiKey}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.status === 'OK' && data.results && data.results.length > 0) {
+              const result = data.results[0]
+              lat = result.geometry.location.lat
+              lon = result.geometry.location.lng
+              displayName = result.formatted_address
+            }
+          }
+        } catch (err) {
+          console.warn("Google Geocoding failed, falling back to Nominatim:", err)
+        }
+      }
+
+      // 2. Fallback to Nominatim if Google geocoding didn't get coords
+      if (lat === null || lon === null) {
+        console.log("Using Nominatim API...")
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'FarmIQ-Crop-Recommendation-App'
+          }
+        })
+        if (!response.ok) {
+          throw new Error(`Geocoding failed with status: ${response.status}`)
+        }
+        const data = await response.json()
+        if (data && data.length > 0) {
+          lat = parseFloat(data[0].lat)
+          lon = parseFloat(data[0].lon)
+          displayName = data[0].display_name
+        }
+      }
+
+      if (lat === null || lon === null) {
+        throw new Error("Location not found. Please verify spelling or try a different search query.")
+      }
+
+      console.log(`Geocoded "${locationName}" to coordinates: ${lat}, ${lon}`)
+      
+      const formattedLocation = `${displayName} (${lat.toFixed(4)}, ${lon.toFixed(4)})`
+      setLocation(formattedLocation)
+      setLastFetchedLocation(formattedLocation)
+
+      // Save custom location to localStorage to sync default coordinates with the crops weather card
+      if (typeof window !== 'undefined') {
+        const shortName = displayName.split(',')[0]
+        localStorage.setItem("dashboard_location", JSON.stringify({ name: shortName, lat, lon }))
+        console.log(`Saved synchronized custom location "${shortName}" to localStorage.`)
+      }
+
+      // Fetch environmental data
+      return await fetchEnvironmentalData(lat, lon)
+    } catch (err: any) {
+      console.error("Geocoding/fetch error:", err)
+      setError(err.message || "Failed to find location. Please try again.")
+      return null
+    } finally {
+      setIsGeocoding(false)
+    }
+  }
+
   const handleGetRecommendations = async () => {
     if (!session) {
       triggerNavGlow()
@@ -201,8 +348,32 @@ export function HeroSection() {
       return
     }
 
-    if (!selectedCrop || !weatherData || !soilData) {
-      setError("Please detect location and select a crop first")
+    if (!selectedCrop) {
+      setError("Please select a crop first")
+      return
+    }
+
+    if (!location.trim()) {
+      setError("Please enter or detect a location first")
+      return
+    }
+
+    let currentWeatherData = weatherData
+    let currentSoilData = soilData
+
+    // If coordinates are missing or location changed, run geocoding/fetch first
+    if (!currentWeatherData || !currentSoilData || location !== lastFetchedLocation) {
+      console.log("Location changed or environmental data missing. Triggering geocoding...")
+      const fetched = await handleManualLocationSearch(location)
+      if (!fetched) {
+        return
+      }
+      currentWeatherData = fetched.weather
+      currentSoilData = fetched.soil
+    }
+
+    if (!currentWeatherData || !currentSoilData) {
+      setError("Unable to obtain environmental data for this location")
       return
     }
 
@@ -220,14 +391,14 @@ export function HeroSection() {
         body: JSON.stringify({
           crop_name: selectedCrop,
           environment: {
-            temperature: weatherData.temperature,
-            humidity: weatherData.humidity,
-            precipitation: weatherData.precipitation,
-            ph: soilData.ph,
-            nitrogen: soilData.nitrogen,
-            clay: soilData.clayContent,
-            sand: soilData.sandContent,
-            organic_carbon: soilData.organicCarbon
+            temperature: currentWeatherData.temperature,
+            humidity: currentWeatherData.humidity,
+            precipitation: currentWeatherData.precipitation,
+            ph: currentSoilData.ph,
+            nitrogen: currentSoilData.nitrogen,
+            clay: currentSoilData.clayContent,
+            sand: currentSoilData.sandContent,
+            organic_carbon: currentSoilData.organicCarbon
           }
         })
       })
@@ -247,54 +418,10 @@ export function HeroSection() {
     }
   }
 
-  const useDemoData = () => {
-    // This function has been removed - users must enter location manually or use detect location
-  }
-
-  const applyManualLocation = () => {
-    if (!manualLocation.trim()) {
-      setError("Please enter a location name")
-      return
-    }
-    
-    const mockWeather: WeatherData = {
-      temperature: 20 + Math.random() * 15,
-      humidity: 50 + Math.random() * 30,
-      precipitation: Math.random() * 25,
-      windSpeed: 1 + Math.random() * 10,
-      pressure: 1005 + Math.random() * 25,
-      description: "Variable",
-      icon: "02d",
-      feelsLike: 22 + Math.random() * 15,
-      tempMin: 18 + Math.random() * 8,
-      tempMax: 28 + Math.random() * 12
-    }
-    
-    const mockSoil: SoilData = {
-      ph: 5.5 + Math.random() * 2.5,
-      nitrogen: 1.0 + Math.random() * 3,
-      phosphorus: 8 + Math.random() * 25,
-      potassium: 120 + Math.random() * 150,
-      organicCarbon: 0.5 + Math.random() * 2,
-      bulkDensity: 1.1 + Math.random() * 0.5,
-      clayContent: 10 + Math.random() * 35,
-      sandContent: 25 + Math.random() * 50,
-      siltContent: 10 + Math.random() * 30
-    }
-    
-    setLocation(manualLocation.trim())
-    setWeatherData(mockWeather)
-    setSoilData(mockSoil)
-    setError("")
-    setShowManualInput(false)
-    setManualLocation("")
-    
-    console.log(`Manual location data generated for: ${manualLocation}`)
-  }
-
   const detectLocation = async () => {
     setIsDetecting(true)
     setError("")
+    setInfoMessage("")
     
     // Check if geolocation is supported
     if (!navigator.geolocation) {
@@ -319,7 +446,7 @@ export function HeroSection() {
     const geoOptions = {
       enableHighAccuracy: true,
       timeout: 15000, // 15 seconds timeout
-      maximumAge: 300000 // 5 minutes cache
+      maximumAge: 0 // Force fresh location query instead of stale cache
     }
 
     // Wrap geolocation in a promise for better error handling
@@ -341,24 +468,23 @@ export function HeroSection() {
         throw new Error('Invalid coordinates received from GPS')
       }
 
-      // Set basic location with coordinates
-      const basicLocationString = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-      setLocation(basicLocationString)
-
-      // Add accuracy info if available
-      let locationWithAccuracy = basicLocationString
-      if (accuracy) {
+      // Warn user if accuracy is poor
+      if (accuracy && accuracy > 3000) {
         const accuracyKm = (accuracy / 1000).toFixed(1)
-        locationWithAccuracy += ` (±${accuracyKm}km)`
+        setInfoMessage(`Detected location is only accurate to ±${accuracyKm}km. For precise results, please manually type your location above.`)
+      } else {
+        setInfoMessage("")
       }
-      setLocation(locationWithAccuracy)
 
-      // Try geocoding if API key is available and valid
+      // Set basic location with coordinates
+      let finalLocation = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+      let resolvedAddress = ""
+
+      // 1. Google Maps Geocoding API if key is present
       if (apiKey && apiKey !== 'your-google-maps-api-key-here' && apiKey.length > 20) {
         try {
-          console.log('Attempting reverse geocoding...')
+          console.log('Attempting reverse geocoding via Google...')
           const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-          
           const response = await fetch(geocodeUrl, {
             method: 'GET',
             headers: {
@@ -366,109 +492,52 @@ export function HeroSection() {
             }
           })
           
-          if (!response.ok) {
-            throw new Error(`Geocoding API error: ${response.status}`)
-          }
-          
-          const data = await response.json()
-          
-          if (data.status === 'OK' && data.results && data.results.length > 0) {
-            const result = data.results[0]
-            const addressComponents = result.address_components || []
-            
-            let city = ""
-            let state = ""
-            let country = ""
-            
-            addressComponents.forEach((component: any) => {
-              const types = component.types || []
-              if (types.includes('locality') || types.includes('sublocality')) {
-                city = component.long_name
-              } else if (types.includes('administrative_area_level_2') && !city) {
-                city = component.long_name
-              } else if (types.includes('administrative_area_level_1')) {
-                state = component.short_name || component.long_name
-              } else if (types.includes('country')) {
-                country = component.long_name
-              }
-            })
-            
-            // Build location string with available information
-            const locationParts = []
-            if (city) locationParts.push(city)
-            if (state && state !== city) locationParts.push(state)
-            if (country) locationParts.push(country)
-            
-            if (locationParts.length > 0) {
-              const readableLocation = locationParts.join(', ')
-              const enhancedLocationString = `${readableLocation} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
-              setLocation(enhancedLocationString)
-              console.log('Geocoding successful:', enhancedLocationString)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.status === 'OK' && data.results && data.results.length > 0) {
+              resolvedAddress = data.results[0].formatted_address
+              console.log('Google reverse geocoding successful:', resolvedAddress)
             }
-          } else {
-            console.warn('Geocoding returned no results or error:', data.status)
           }
         } catch (geocodeError) {
-          console.warn('Geocoding failed, using coordinates:', geocodeError)
-          // Keep the coordinate-based location
+          console.warn('Google reverse geocoding failed, trying Nominatim fallback:', geocodeError)
         }
-      } else {
-        console.log('No valid Google Maps API key, using coordinates only')
       }
+
+      // 2. Fallback to OpenStreetMap Nominatim reverse geocoding if Google Geocoding is not used or failed
+      if (!resolvedAddress) {
+        try {
+          console.log('Attempting reverse geocoding via Nominatim...')
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'FarmIQ-Crop-Recommendation-App'
+            }
+          })
+          if (response.ok) {
+            const data = await response.json()
+            if (data && data.display_name) {
+              resolvedAddress = data.display_name
+              console.log('Nominatim reverse geocoding successful:', resolvedAddress)
+            }
+          }
+        } catch (nominatimError) {
+          console.warn('Nominatim reverse geocoding failed:', nominatimError)
+        }
+      }
+
+      if (resolvedAddress) {
+        finalLocation = `${resolvedAddress} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
+      } else if (accuracy) {
+        const accuracyKm = (accuracy / 1000).toFixed(1)
+        finalLocation += ` (±${accuracyKm}km)`
+      }
+
+      setLocation(finalLocation)
+      setLastFetchedLocation(finalLocation)
 
       // Fetch environmental data
-      setIsLoadingData(true)
-      console.log('Fetching environmental data...')
-      
-      // Try to fetch real weather data first, fallback to mock data
-      try {
-        if (process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY && 
-            process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY !== 'your-openweather-api-key-here') {
-          console.log('Attempting to fetch real weather data...')
-          const weather = await fetchWeatherData(latitude, longitude)
-          setWeatherData(weather)
-          console.log('Real weather data loaded successfully')
-        } else {
-          throw new Error('No weather API key available')
-        }
-      } catch (weatherError) {
-        console.log('Using mock weather data:', weatherError)
-        const mockWeather: WeatherData = {
-          temperature: 25 + Math.random() * 10, // 25-35°C
-          humidity: 60 + Math.random() * 20,    // 60-80%
-          precipitation: Math.random() * 20,     // 0-20mm
-          windSpeed: 2 + Math.random() * 8,     // 2-10 m/s
-          pressure: 1010 + Math.random() * 20,  // 1010-1030 hPa
-          description: "Partly Cloudy",
-          icon: "02d",
-          feelsLike: 26 + Math.random() * 12,   // Feels like temp
-          tempMin: 22 + Math.random() * 5,      // Min temp
-          tempMax: 30 + Math.random() * 8       // Max temp
-        }
-        setWeatherData(mockWeather)
-      }
-
-      // Use location-based soil data estimation
-      try {
-        console.log('Generating location-based soil data...')
-        const mockSoil: SoilData = {
-          ph: 6.0 + Math.random() * 2,          // pH 6.0-8.0
-          nitrogen: 1.5 + Math.random() * 2,    // 1.5-3.5 g/kg
-          phosphorus: 10 + Math.random() * 20,  // 10-30 mg/kg
-          potassium: 150 + Math.random() * 100, // 150-250 mg/kg
-          organicCarbon: 0.8 + Math.random() * 1.5, // 0.8-2.3%
-          bulkDensity: 1.2 + Math.random() * 0.4,   // 1.2-1.6 g/cm³
-          clayContent: 15 + Math.random() * 25,     // 15-40%
-          sandContent: 30 + Math.random() * 40,     // 30-70%
-          siltContent: 15 + Math.random() * 25      // 15-40%
-        }
-        setSoilData(mockSoil)
-        console.log('Soil data generated successfully')
-      } catch (soilError) {
-        console.error('Error generating soil data:', soilError)
-      }
-
-      setIsLoadingData(false)
+      await fetchEnvironmentalData(latitude, longitude)
       setIsDetecting(false)
       
     } catch (error: any) {
@@ -557,7 +626,11 @@ export function HeroSection() {
                 <label className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 block">{t("hero.location_label")}</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Search className="w-4 h-4" />
+                    {isGeocoding || isLoadingData ? (
+                      <Loader className="w-4 h-4 animate-spin text-green-600 dark:text-green-500" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
                   </div>
                   {/* Overlay blocks interaction and triggers glow when not signed in */}
                   {!session && (
@@ -570,14 +643,20 @@ export function HeroSection() {
                     type="text"
                     placeholder={t("hero.location_placeholder")}
                     value={location}
-                    readOnly
-                    className={`hero-text-input w-full pl-9 pr-36 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm ${!session ? 'text-gray-900 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : 'text-gray-900 dark:text-white bg-white dark:bg-gray-800 cursor-text'}`}
+                    readOnly={!session || isDetecting || isGeocoding || isLoadingData}
+                    onChange={(e) => setLocation(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleManualLocationSearch(location)
+                      }
+                    }}
+                    className={`hero-text-input w-full pl-9 pr-[180px] py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm ${!session || isDetecting || isGeocoding || isLoadingData ? 'text-gray-900 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : 'text-gray-900 dark:text-white bg-white dark:bg-gray-800 cursor-text'}`}
                   />
                   <button
                     onClick={handleDetectLocationClick}
-                    disabled={isDetecting || !session}
+                    disabled={isDetecting || isGeocoding || isLoadingData || !session}
                     className={`absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                      !session || isDetecting
+                      !session || isDetecting || isGeocoding || isLoadingData
                         ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                         : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50'
                     }`}
@@ -595,6 +674,12 @@ export function HeroSection() {
                     )}
                   </button>
                 </div>
+                {infoMessage && (
+                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-start gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <span className="shrink-0">⚠️</span>
+                    <span>{infoMessage}</span>
+                  </p>
+                )}
               </div>
 
               {/* Crop Selection Section */}
